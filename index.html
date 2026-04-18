@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d1117">
+<title>Service Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --accent: #f97316;
+    --accent-dim: rgba(249,115,22,0.15);
+    --green: #3fb950;
+    --green-dim: rgba(63,185,80,0.15);
+    --blue: #58a6ff;
+    --blue-dim: rgba(88,166,255,0.15);
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --danger: #f85149;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow Condensed', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .badge {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  .field-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  label span.required { color: var(--accent); }
+
+  input[type=text], select, textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1rem;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type=text]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+  select option { background: var(--bg); }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+  /* LIVE CLOCK BOX */
+  .clock-box {
+    background: var(--surface);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .clock-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+  .clock-value {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--green);
+    flex: 1;
+  }
+  .clock-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* SERIAL SCAN ROW */
+  .serial-row { display: flex; gap: 8px; align-items: stretch; }
+  .serial-row input { flex: 1; }
+  .btn-scan {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 0 14px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-scan:active { opacity: 0.7; }
+
+  /* SCANNER MODAL */
+  .scan-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #000; z-index: 300; flex-direction: column;
+  }
+  .scan-overlay.open { display: flex; }
+  .scan-header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .scan-header h2 {
+    font-family: var(--mono); font-size: 0.9rem;
+    color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .btn-scan-close {
+    background: none; border: none;
+    color: var(--muted); font-size: 1.4rem; cursor: pointer; line-height: 1;
+  }
+  .scan-viewport { flex: 1; position: relative; overflow: hidden; }
+  #scan-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scan-aim {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 260px; height: 150px;
+    border: 2px solid var(--accent); border-radius: 6px;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .scan-line {
+    position: absolute; left: 4px; right: 4px; height: 2px;
+    background: var(--accent); opacity: 0.85;
+    animation: scanline 2s ease-in-out infinite;
+  }
+  @keyframes scanline { 0% { top: 4px; } 100% { top: calc(100% - 4px); } }
+  .scan-status {
+    position: absolute; bottom: 28px; left: 0; right: 0;
+    text-align: center; font-family: var(--mono);
+    font-size: 0.78rem; color: #fff; letter-spacing: 0.08em;
+    text-shadow: 0 1px 4px #000;
+  }
+
+  /* BUTTONS */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .btn {
+    padding: 13px 10px;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-save  { background: var(--accent); color: #000; grid-column: 1/-1; font-size: 1rem; }
+  .btn-clear { background: transparent; color: var(--muted); border: 1px solid var(--border); grid-column: 1/-1; font-size: 0.85rem; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 10px 20px;
+    border-radius: 4px;
+    transition: transform 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* BATCH */
+  #batch-count {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  #batch-count span { color: var(--accent); }
+
+  .report-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .card-serial   { font-family: var(--mono); font-size: 1rem; color: var(--accent); margin-bottom: 2px; }
+  .card-location { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
+  .card-meta     { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); line-height: 1.8; }
+  .card-comment  {
+    font-family: var(--sans); font-size: 0.85rem; color: var(--text);
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 400;
+  }
+
+  .status-pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .pill-no-activity   { background: rgba(139,148,158,0.15); color: var(--muted);  border: 1px solid var(--border); }
+  .pill-activity-lt25 { background: rgba(88,166,255,0.15);  color: #58a6ff;      border: 1px solid #58a6ff55; }
+  .pill-activity-lt50 { background: var(--accent-dim);      color: var(--accent); border: 1px solid rgba(249,115,22,0.4); }
+  .pill-activity-gt50 { background: var(--green-dim);       color: var(--green);  border: 1px solid rgba(63,185,80,0.4); }
+  .pill-material      { background: rgba(188,140,255,0.15); color: #c084fc;      border: 1px solid rgba(192,132,252,0.4); margin-left: 4px; }
+
+  .btn-delete {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none;
+    color: var(--danger); font-size: 1rem;
+    cursor: pointer; opacity: 0.6; line-height: 1;
+  }
+  .btn-delete:hover { opacity: 1; }
+
+  /* EXPORT BAR — 3 buttons */
+  .export-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .export-bar-full {
+    margin-bottom: 16px;
+  }
+  .btn-export {
+    padding: 12px;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s, color 0.15s;
+    width: 100%;
+  }
+  .btn-export:hover          { border-color: var(--accent); color: var(--accent); }
+  .btn-export-email          { border-color: var(--blue);   color: var(--blue); background: var(--blue-dim); }
+  .btn-export-email:hover    { border-color: var(--blue);   color: var(--text); background: rgba(88,166,255,0.25); }
+  .btn-export-danger         { border-color: var(--danger); color: var(--danger); }
+  .btn-export-danger:hover   { background: rgba(248,81,73,0.1); }
+
+  /* EMAIL MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .modal h2 {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .modal .field-group { margin-bottom: 14px; }
+  .modal-note {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .modal-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .btn-modal-send {
+    padding: 12px;
+    background: var(--blue);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .btn-modal-cancel {
+    padding: 12px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--muted); font-family: var(--mono); font-size: 0.85rem;
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙ Service Report</h1>
+  <span class="badge" id="header-badge">BATCH: 0</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('form', event)">New Report</button>
+  <button class="tab" onclick="switchTab('batch', event)">Batch Queue</button>
+</div>
+
+<!-- FORM PANEL -->
+<div class="panel active" id="panel-form">
+
+  <div class="field-group">
+    <label>Serial Number <span class="required">*</span></label>
+    <div class="serial-row">
+      <input type="text" id="serial" placeholder="Scan or type serial #" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn-scan" onclick="openScanner()" title="Scan barcode">📷</button>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Location <span class="required">*</span></label>
+    <input type="text" id="location" placeholder="e.g. Warehouse A, Bay 3" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="field-group">
+    <label>Status <span class="required">*</span></label>
+    <select id="status">
+      <option value="">— Select Status —</option>
+      <option value="no-activity">No Activity</option>
+      <option value="activity-lt25">Activity &lt;25%</option>
+      <option value="activity-lt50">Activity &lt;50%</option>
+      <option value="activity-gt50">Activity &gt;50%</option>
+    </select>
+  </div>
+
+  <div class="field-group">
+    <label>Material Used <span class="required">*</span></label>
+    <select id="material">
+      <option value="">— Select Material —</option>
+      <option value="none">None</option>
+      <option value="contrac">Contrac | Bromadiolone 0.005% | PCP# 22239</option>
+      <option value="final">Final | Brodifacoum 0.005% | PCP# 25423</option>
+      <option value="flatline">Flatline | Chlorophacinone 0.005% | PCP# 34219</option>
+    </select>
+  </div>
+
+  <div class="field-group">
+    <label>Capture Time <span style="color:var(--green);font-size:0.6rem;">● LIVE</span></label>
+    <div class="clock-box">
+      <div class="clock-dot"></div>
+      <div class="clock-value" id="live-clock">—</div>
+      <div class="clock-label">Device Time</div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Service Comments</label>
+    <textarea id="comments" placeholder="Describe work performed, parts used, findings..."></textarea>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-save" onclick="saveReport()">＋ Save to Batch</button>
+    <button class="btn btn-clear" onclick="clearForm()">✕ Clear Form</button>
+  </div>
+
+</div>
+
+<!-- BATCH PANEL -->
+<div class="panel" id="panel-batch">
+  <div class="export-bar">
+    <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn-export btn-export-danger" onclick="clearAll()">✕ Clear All</button>
+  </div>
+  <div class="export-bar-full">
+    <button class="btn-export btn-export-email" onclick="openEmailModal()" style="width:100%;">✉ Export &amp; Email</button>
+  </div>
+  <div id="batch-count">Saved reports: <span>0</span></div>
+  <div id="batch-list"></div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <h2>✉ Export &amp; Email</h2>
+    <div class="field-group">
+      <label>Recipient Email <span class="required">*</span></label>
+      <input type="text" id="email-to" value="dan.trudell75@gmail.com" autocomplete="email" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>Subject</label>
+      <input type="text" id="email-subject" value="Service Reports Export">
+    </div>
+    <p class="modal-note" id="email-modal-note">
+      Your mail app will open with the CSV data pasted directly in the email body.
+    </p>
+    <div class="modal-btns">
+      <button class="btn-modal-send" id="btn-send-email" onclick="doEmailExport()">✉ Send Email</button>
+      <button class="btn-modal-cancel" onclick="closeEmailModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCANNER MODAL -->
+<div class="scan-overlay" id="scan-overlay">
+  <div class="scan-header">
+    <h2>📷 Scan Barcode</h2>
+    <button class="btn-scan-close" onclick="closeScanner()">✕</button>
+  </div>
+  <div class="scan-viewport">
+    <video id="scan-video" autoplay playsinline muted></video>
+    <div class="scan-aim">
+      <div class="scan-line"></div>
+    </div>
+    <div class="scan-status" id="scan-status">Point camera at barcode or QR code</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Barcode Scanner ────────────────────────────────────────────────────────
+  let codeReader = null;
+  let scannerActive = false;
+
+  async function openScanner() {
+    document.getElementById('scan-overlay').classList.add('open');
+    document.getElementById('scan-status').textContent = 'Starting camera...';
+
+    try {
+      // ZXing via unpkg exposes as ZXingLibrary
+      const ZXing = window.ZXingLibrary || window.ZXing;
+      if (ZXing && ZXing.BrowserMultiFormatReader) {
+        await startZXing(ZXing);
+      } else if ('BarcodeDetector' in window) {
+        await startBarcodeDetector();
+      } else {
+        // Last resort — raw getUserMedia + canvas decode attempt
+        await startRawCamera();
+      }
+    } catch (err) {
+      document.getElementById('scan-status').textContent = '⚠ ' + err.message;
+    }
+  }
+
+  async function startZXing(ZXing) {
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    scannerActive = true;
+    document.getElementById('scan-status').textContent = 'Point camera at barcode or QR code';
+
+    // Use environment-facing camera constraint directly
+    const hints = new Map();
+    await codeReader.decodeFromConstraints(
+      { video: { facingMode: 'environment' } },
+      'scan-video',
+      (result, err) => {
+        if (result && scannerActive) {
+          onScanSuccess(result.getText());
+        }
+      }
+    );
+  }
+
+  async function startBarcodeDetector() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('scan-video');
+    video.srcObject = stream;
+    await video.play();
+    const detector = new BarcodeDetector();
+    scannerActive = true;
+    document.getElementById('scan-status').textContent = 'Point camera at barcode or QR code';
+    const tick = async () => {
+      if (!scannerActive) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length > 0) { onScanSuccess(codes[0].rawValue); return; }
+      } catch(e) {}
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  async function startRawCamera() {
+    // iPhone Safari fallback — show camera, let user read and type
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('scan-video');
+    video.srcObject = stream;
+    await video.play();
+    scannerActive = true;
+    document.getElementById('scan-status').textContent = 'Camera active — read barcode and type below, or close';
+  }
+
+  function onScanSuccess(value) {
+    scannerActive = false;
+    document.getElementById('serial').value = value;
+    document.getElementById('scan-status').textContent = '✓ Scanned: ' + value;
+    setTimeout(() => closeScanner(), 600);
+    showToast('✓ Serial scanned: ' + value);
+  }
+
+  function closeScanner() {
+    scannerActive = false;
+    document.getElementById('scan-overlay').classList.remove('open');
+
+    // Stop ZXing
+    if (codeReader) {
+      try { codeReader.reset(); } catch(e) {}
+      codeReader = null;
+    }
+
+    // Stop any raw camera stream
+    const video = document.getElementById('scan-video');
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+  }
+
+  // ── Live clock ─────────────────────────────────────────────────────────────
+  function tickClock() {
+    document.getElementById('live-clock').textContent = fmtDateTime(new Date());
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ── Status labels ──────────────────────────────────────────────────────────
+  const STATUS_LABELS = {
+    'no-activity':   'No Activity',
+    'activity-lt25': 'Activity <25%',
+    'activity-lt50': 'Activity <50%',
+    'activity-gt50': 'Activity >50%'
+  };
+
+  const MATERIAL_LABELS = {
+    'none':     'None',
+    'contrac':  'Contrac | Bromadiolone 0.005% | PCP# 22239',
+    'final':    'Final | Brodifacoum 0.005% | PCP# 25423',
+    'flatline': 'Flatline | Chlorophacinone 0.005% | PCP# 34219'
+  };
+
+  // ── Storage ────────────────────────────────────────────────────────────────
+  function loadReports() {
+    try { return JSON.parse(localStorage.getItem('svc_reports') || '[]'); }
+    catch { return []; }
+  }
+  function saveReports(list) {
+    localStorage.setItem('svc_reports', JSON.stringify(list));
+  }
+
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(name, e) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    e.target.classList.add('active');
+    if (name === 'batch') renderBatch();
+  }
+
+  // ── Format date/time ───────────────────────────────────────────────────────
+  function fmtDateTime(d) {
+    if (!d) return '—';
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+      + '  ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // ── Save report (capture time = NOW automatically) ─────────────────────────
+  function saveReport() {
+    const serial   = document.getElementById('serial').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const status   = document.getElementById('status').value;
+    const material = document.getElementById('material').value;
+    const comments = document.getElementById('comments').value.trim();
+
+    if (!serial)   { alert('Serial number is required.'); return; }
+    if (!location) { alert('Location is required.');      return; }
+    if (!status)   { alert('Please select a status.');    return; }
+    if (!material) { alert('Please select a material.');  return; }
+
+    const report = {
+      id:          Date.now(),
+      serial,
+      location,
+      status,
+      material,
+      comments,
+      captureTime: new Date().toISOString(),   // auto-stamped at save
+      savedAt:     new Date().toISOString()
+    };
+
+    const list = loadReports();
+    list.push(report);
+    saveReports(list);
+    updateBadge(list.length);
+    showToast('✓ Report saved to batch');
+    clearForm();
+  }
+
+  // ── Clear form ─────────────────────────────────────────────────────────────
+  function clearForm() {
+    document.getElementById('serial').value   = '';
+    document.getElementById('location').value = '';
+    document.getElementById('status').value   = '';
+    document.getElementById('material').value = '';
+    document.getElementById('comments').value = '';
+    document.getElementById('serial').focus();
+  }
+
+  // ── Render batch list ──────────────────────────────────────────────────────
+  function renderBatch() {
+    const list = loadReports();
+    document.querySelector('#batch-count span').textContent = list.length;
+    const container = document.getElementById('batch-list');
+
+    if (list.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">📋</div>No reports yet.<br>Save a report from the form.</div>`;
+      return;
+    }
+
+    container.innerHTML = list.slice().reverse().map(r => {
+      const cap = r.captureTime ? new Date(r.captureTime) : null;
+      return `
+        <div class="report-card">
+          <button class="btn-delete" onclick="deleteReport(${r.id})" title="Delete">✕</button>
+          <div class="card-serial"># ${escHtml(r.serial)}</div>
+          <div class="card-location">📍 ${escHtml(r.location)}</div>
+          <span class="status-pill pill-${r.status}">${STATUS_LABELS[r.status] || r.status}</span>
+          ${r.material ? `<span class="status-pill pill-material">${MATERIAL_LABELS[r.material] || r.material}</span>` : ''}
+          <div class="card-meta">
+            CAPTURED: ${cap ? fmtDateTime(cap) : '—'}
+          </div>
+          ${r.comments ? `<div class="card-comment">${escHtml(r.comments)}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function deleteReport(id) {
+    if (!confirm('Delete this report?')) return;
+    const list = loadReports().filter(r => r.id !== id);
+    saveReports(list);
+    updateBadge(list.length);
+    renderBatch();
+  }
+
+  function clearAll() {
+    if (!confirm('Clear ALL saved reports? This cannot be undone.')) return;
+    localStorage.removeItem('svc_reports');
+    updateBadge(0);
+    renderBatch();
+  }
+
+  // ── Build CSV string ───────────────────────────────────────────────────────
+  function buildCSV() {
+    const list = loadReports();
+    const headers = ['Serial Number','Location','Status','Material Used','Capture Time','Comments'];
+    const rows = list.map(r => [
+      r.serial,
+      r.location,
+      STATUS_LABELS[r.status] || r.status,
+      MATERIAL_LABELS[r.material] || r.material || '',
+      r.captureTime ? fmtDateTime(new Date(r.captureTime)) : '',
+      r.comments
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    return [headers.join(','), ...rows].join('\r\n');
+  }
+
+  // ── Download CSV file ──────────────────────────────────────────────────────
+  function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCSV() {
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to export.'); return; }
+    downloadCSV(buildCSV(), 'service_reports_' + new Date().toISOString().slice(0,10) + '.csv');
+    showToast('✓ CSV downloaded');
+  }
+
+  // ── Email modal ────────────────────────────────────────────────────────────
+  function openEmailModal() {
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to export.'); return; }
+    // Pre-fill subject with today's date
+    document.getElementById('email-subject').value =
+      'Service Reports — ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('email-modal').classList.add('open');
+    document.getElementById('email-to').focus();
+  }
+
+  function closeEmailModal() {
+    document.getElementById('email-modal').classList.remove('open');
+  }
+
+  async function doEmailExport() {
+    const to      = document.getElementById('email-to').value.trim();
+    const subject = document.getElementById('email-subject').value.trim();
+
+    if (!to) { alert('Please enter a recipient email address.'); return; }
+
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to send.'); return; }
+
+    // Build CSV text and put it directly in the email body
+    const csv = buildCSV();
+    const body = 'Service Reports Export\n' +
+      'Exported: ' + fmtDateTime(new Date()) + '\n' +
+      'Total Reports: ' + list.length + '\n\n' +
+      '--- CSV DATA ---\n\n' + csv;
+
+    const mailtoLink = 'mailto:' + encodeURIComponent(to) +
+      '?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body);
+
+    window.location.href = mailtoLink;
+    closeEmailModal();
+    showToast('✓ Mail app opened with CSV data');
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function updateBadge(count) {
+    document.getElementById('header-badge').textContent = 'BATCH: ' + count;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  updateBadge(loadReports().length);
+  document.getElementById('serial').focus();
+</script>
+</body>
+</html>
