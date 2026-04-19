@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root {
     --bg: #0d1117;
@@ -351,6 +353,8 @@
     width: 100%;
   }
   .btn-export:hover          { border-color: var(--accent); color: var(--accent); }
+  .btn-export-pdf            { border-color: #a78bfa; color: #a78bfa; background: rgba(167,139,250,0.1); }
+  .btn-export-pdf:hover      { background: rgba(167,139,250,0.2); border-color: #a78bfa; color: #a78bfa; }
   .btn-export-email          { border-color: var(--blue);   color: var(--blue); background: var(--blue-dim); }
   .btn-export-email:hover    { border-color: var(--blue);   color: var(--text); background: rgba(88,166,255,0.25); }
   .btn-export-danger         { border-color: var(--danger); color: var(--danger); }
@@ -507,6 +511,11 @@
   <div class="export-bar">
     <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
     <button class="btn-export btn-export-danger" onclick="clearAll()">✕ Clear All</button>
+  </div>
+  <div class="export-bar" style="margin-bottom:10px;">
+    <button class="btn-export btn-export-pdf" onclick="exportPDF()" style="width:100%;">📄 Export PDF Report</button>
+    <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Harrow Research and Development Centre', address: '2585 Essex County Rd 20, Harrow, ON N0R 1G0' })" style="width:100%;">📄 Export PDF — Harrow</button>
+    <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Woodslee Experimental Farm', address: '1376 County Rd. 46, Woodslee' })" style="width:100%;">📄 Export PDF — Woodslee</button>
   </div>
   <div class="export-bar-full">
     <button class="btn-export btn-export-email" onclick="openEmailModal()" style="width:100%;">✉ Export &amp; Email</button>
@@ -815,6 +824,273 @@
     if (list.length === 0) { alert('No reports to export.'); return; }
     downloadCSV(buildCSV(), 'service_reports_' + new Date().toISOString().slice(0,10) + '.csv');
     showToast('✓ CSV downloaded');
+  }
+
+  // ── Export PDF Report ──────────────────────────────────────────────────────
+  function exportPDF(location) {
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to export.'); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+
+    const ORANGE  = [233, 98, 26];
+    const DARK    = [26, 26, 46];
+    const WHITE   = [255, 255, 255];
+    const LGREY   = [245, 245, 245];
+    const MGREY   = [200, 200, 200];
+    const TEXTCOL = [40, 40, 40];
+
+    const PW = 215.9; // portrait letter width mm
+    const PH = 279.4; // portrait letter height mm
+    const ML = 14;
+    const MR = 14;
+    const CW = PW - ML - MR;
+
+    // ── Sort by capture time ──
+    const sorted = list.slice().sort((a, b) =>
+      new Date(a.captureTime) - new Date(b.captureTime));
+    const first = new Date(sorted[0].captureTime);
+    const last  = new Date(sorted[sorted.length - 1].captureTime);
+
+    // ── Totals ──
+    const totalStations = list.length;
+    const byStatus = {};
+    const byMaterial = {};
+    list.forEach(r => {
+      const s = STATUS_LABELS[r.status] || r.status;
+      const m = MATERIAL_LABELS[r.material] || r.material || 'None';
+      byStatus[s]   = (byStatus[s]   || 0) + 1;
+      byMaterial[m] = (byMaterial[m] || 0) + 1;
+    });
+
+    let y = 0;
+
+    // ── HEADER BAR ──
+    doc.setFillColor(...DARK);
+    doc.rect(0, 0, PW, 28, 'F');
+
+    doc.setFillColor(...ORANGE);
+    doc.rect(0, 28, PW, 2, 'F');
+
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Windsor Pest Control, Inc.', ML, 12);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Service Report', ML, 20);
+    doc.text('CONFIDENTIAL — FOR INTERNAL USE ONLY', PW - MR, 20, { align: 'right' });
+
+    y = 38;
+
+    // ── REPORT INFO BOX ──
+    const infoBoxH = location ? 48 : 28;
+    doc.setFillColor(...LGREY);
+    doc.roundedRect(ML, y, CW, infoBoxH, 2, 2, 'F');
+    doc.setDrawColor(...MGREY);
+    doc.roundedRect(ML, y, CW, infoBoxH, 2, 2, 'S');
+
+    doc.setTextColor(...DARK);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+
+    const col1 = ML + 4;
+    const col2 = ML + CW / 2;
+
+    doc.text('TECHNICIAN', col1, y + 7);
+    doc.text('REPORT DATE', col2, y + 7);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Catherine Trudell', col1, y + 14);
+    doc.text(new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), col2, y + 14);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('SERVICE START', col1, y + 21);
+    doc.text('SERVICE END', col2, y + 21);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(fmtDateTime(first), col1, y + 28);
+    doc.text(fmtDateTime(last),  col2, y + 28);
+
+    if (location) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('SERVICE LOCATION', col1, y + 35);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`${location.name}  —  ${location.address}`, col1, y + 42);
+    }
+
+    y += infoBoxH + 8;
+
+    // ── SUMMARY SECTION HEADER ──
+    doc.setFillColor(...ORANGE);
+    doc.rect(ML, y, CW, 7, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('SUMMARY', ML + 3, y + 5);
+    y += 10;
+
+    // Total stations
+    doc.setFillColor(...DARK);
+    doc.roundedRect(ML, y, CW, 12, 2, 2, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`Total Stations Inspected: ${totalStations}`, ML + 4, y + 8);
+    y += 16;
+
+    // Status breakdown + Material breakdown side by side
+    const halfW = (CW - 4) / 2;
+
+    // Status box
+    doc.setFillColor(...LGREY);
+    doc.roundedRect(ML, y, halfW, 6 + Object.keys(byStatus).length * 7 + 4, 2, 2, 'F');
+    doc.setDrawColor(...MGREY);
+    doc.roundedRect(ML, y, halfW, 6 + Object.keys(byStatus).length * 7 + 4, 2, 2, 'S');
+    doc.setTextColor(...ORANGE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('ACTIVITY STATUS', ML + 3, y + 5);
+    doc.setTextColor(...TEXTCOL);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    let sy = y + 11;
+    Object.entries(byStatus).forEach(([label, count]) => {
+      doc.text(`${label}:`, ML + 3, sy);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(count), ML + halfW - 8, sy, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      sy += 7;
+    });
+    const statusBoxH = 6 + Object.keys(byStatus).length * 7 + 4;
+
+    // Material box — calculate height with 3 lines per entry
+    const matEntries = Object.entries(byMaterial);
+    const matBoxH = 6 + matEntries.length * 18 + 4;
+    const mx = ML + halfW + 4;
+    doc.setFillColor(...LGREY);
+    doc.roundedRect(mx, y, halfW, matBoxH, 2, 2, 'F');
+    doc.setDrawColor(...MGREY);
+    doc.roundedRect(mx, y, halfW, matBoxH, 2, 2, 'S');
+    doc.setTextColor(...ORANGE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('MATERIAL USED', mx + 3, y + 5);
+    doc.setTextColor(...TEXTCOL);
+    doc.setFontSize(8);
+    let my = y + 12;
+    matEntries.forEach(([label, count]) => {
+      const parts = label.split('|').map(s => s.trim());
+      const name = parts[0] || '';
+      const ai   = parts[1] || '';
+      const pcp  = parts[2] || '';
+      // Product name + count
+      doc.setFont('helvetica', 'bold');
+      doc.text(name, mx + 3, my);
+      doc.text(String(count), mx + halfW - 4, my, { align: 'right' });
+      // AI line
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(7);
+      doc.text(ai, mx + 3, my + 5);
+      // PCP line
+      doc.text(pcp, mx + 3, my + 10);
+      doc.setTextColor(...TEXTCOL);
+      doc.setFontSize(8);
+      my += 18;
+    });
+
+    y += Math.max(statusBoxH, matBoxH) + 8;
+
+    // ── DETAIL TABLE ──
+    doc.setFillColor(...ORANGE);
+    doc.rect(ML, y, CW, 7, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('INSPECTION DETAIL', ML + 3, y + 5);
+    y += 10;
+
+    doc.autoTable({
+      startY: y,
+      margin: { left: ML, right: MR },
+      head: [[
+        '#', 'Serial Number', 'Location', 'Status', 'Material', 'Capture Time', 'Comments'
+      ]],
+      body: sorted.map((r, i) => [
+        i + 1,
+        r.serial,
+        r.location,
+        STATUS_LABELS[r.status] || r.status,
+        (MATERIAL_LABELS[r.material] || r.material || 'None'),
+        r.captureTime ? fmtDateTime(new Date(r.captureTime)) : '—',
+        r.comments || ''
+      ]),
+      headStyles: {
+        fillColor: DARK,
+        textColor: WHITE,
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 3
+      },
+      bodyStyles: {
+        fontSize: 7.5,
+        cellPadding: 2.5,
+        textColor: TEXTCOL
+      },
+      alternateRowStyles: { fillColor: LGREY },
+      columnStyles: {
+        0: { cellWidth: 7,  halign: 'center' },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 52 },
+        5: { cellWidth: 32 },
+        6: { cellWidth: 'auto' }
+      },
+      didDrawPage: (data) => {
+        // Footer on each page
+        doc.setFillColor(...DARK);
+        doc.rect(0, PH - 10, PW, 10, 'F');
+        doc.setTextColor(...WHITE);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text('Windsor Pest Control, Inc.  |  Confidential Service Report', ML, PH - 3.5);
+        doc.text(`Page ${data.pageNumber}`, PW - MR, PH - 3.5, { align: 'right' });
+      }
+    });
+
+    // ── COMPLETION BLOCK on last page ──
+    let finalY = doc.lastAutoTable.finalY + 10;
+    if (finalY > PH - 40) { doc.addPage(); finalY = 20; }
+
+    doc.setDrawColor(...MGREY);
+    doc.setFillColor(...LGREY);
+    doc.roundedRect(ML, finalY, CW, 20, 2, 2, 'F');
+    doc.roundedRect(ML, finalY, CW, 20, 2, 2, 'S');
+
+    doc.setTextColor(...DARK);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('TECHNICIAN', col1, finalY + 7);
+    doc.text('DATE COMPLETED', col2, finalY + 7);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXTCOL);
+    doc.text('Catherine Trudell', col1, finalY + 16);
+    doc.text(new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), col2, finalY + 16);
+
+    // Save
+    const locationSlug = location ? '_' + location.name.replace(/\s+/g, '_').toLowerCase() : '';
+    const filename = 'windsor_service_report' + locationSlug + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
+    doc.save(filename);
+    showToast('✓ PDF report downloaded');
   }
 
   // ── Email modal ────────────────────────────────────────────────────────────
