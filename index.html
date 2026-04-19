@@ -537,7 +537,7 @@
     <h2>✉ Export &amp; Email</h2>
     <div class="field-group">
       <label>Recipient Email <span class="required">*</span></label>
-      <input type="text" id="email-to" value="dan.trudell75@gmail.com" autocomplete="email" autocorrect="off" spellcheck="false">
+      <input type="text" id="email-to" value="dan.trudell75@gmail.com, catherine.wpc@gmail.com" autocomplete="email" autocorrect="off" spellcheck="false">
     </div>
     <div class="field-group">
       <label>Subject</label>
@@ -1116,7 +1116,7 @@
     const list = loadReports();
     if (list.length === 0) { alert('No reports to export.'); return; }
 
-    const to      = 'dan.trudell75@gmail.com';
+    const to      = 'dan.trudell75@gmail.com, catherine.wpc@gmail.com';
     const locName = location ? ' — ' + location.name : '';
     const subject = 'Windsor Pest Control Service Report' + locName + ' — ' +
       new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -1139,7 +1139,7 @@
         })
       });
 
-      showToast('✓ PDF emailed to ' + to);
+      showToast('✓ PDF emailed to both recipients');
     } catch (err) {
       showToast('✕ Email failed: ' + err.message);
     }
