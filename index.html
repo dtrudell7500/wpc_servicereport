@@ -514,8 +514,15 @@
   </div>
   <div class="export-bar" style="margin-bottom:10px;">
     <button class="btn-export btn-export-pdf" onclick="exportPDF()" style="width:100%;">📄 Export PDF Report</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF()" style="width:100%;">✉ Email PDF Report</button>
+  </div>
+  <div class="export-bar" style="margin-bottom:10px;">
     <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Harrow Research and Development Centre', address: '2585 Essex County Rd 20, Harrow, ON N0R 1G0' })" style="width:100%;">📄 Export PDF — Harrow</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF({ name: 'Harrow Research and Development Centre', address: '2585 Essex County Rd 20, Harrow, ON N0R 1G0' })" style="width:100%;">✉ Email PDF — Harrow</button>
+  </div>
+  <div class="export-bar" style="margin-bottom:10px;">
     <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Woodslee Experimental Farm', address: '1376 County Rd. 46, Woodslee' })" style="width:100%;">📄 Export PDF — Woodslee</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF({ name: 'Woodslee Experimental Farm', address: '1376 County Rd. 46, Woodslee' })" style="width:100%;">✉ Email PDF — Woodslee</button>
   </div>
   <div class="export-bar-full">
     <button class="btn-export btn-export-email" onclick="openEmailModal()" style="width:100%;">✉ Export &amp; Email</button>
@@ -827,7 +834,7 @@
   }
 
   // ── Export PDF Report ──────────────────────────────────────────────────────
-  function exportPDF(location) {
+  function exportPDF(location, returnBase64 = false) {
     const list = loadReports();
     if (list.length === 0) { alert('No reports to export.'); return; }
 
@@ -1086,11 +1093,56 @@
     doc.text('Catherine Trudell', col1, finalY + 16);
     doc.text(new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), col2, finalY + 16);
 
-    // Save
+    // Save or return base64
     const locationSlug = location ? '_' + location.name.replace(/\s+/g, '_').toLowerCase() : '';
     const filename = 'windsor_service_report' + locationSlug + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
+
+    if (returnBase64) {
+      const pdfBytes = doc.output('arraybuffer');
+      const uint8 = new Uint8Array(pdfBytes);
+      let binary = '';
+      uint8.forEach(b => binary += String.fromCharCode(b));
+      const base64 = btoa(binary);
+      return { base64, filename };
+    }
     doc.save(filename);
     showToast('✓ PDF report downloaded');
+  }
+
+  // ── Email PDF via Google Apps Script ───────────────────────────────────────
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZraLmP1g_14W-KfheirRik2x0nbL1-W7dzCY3dISkQX2unvdEUbxoimOTnCf8ORj5/exec';
+
+  async function emailPDF(location) {
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to export.'); return; }
+
+    const to      = 'dan.trudell75@gmail.com';
+    const locName = location ? ' — ' + location.name : '';
+    const subject = 'Windsor Pest Control Service Report' + locName + ' — ' +
+      new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+    showToast('⏳ Generating & sending PDF...');
+
+    try {
+      const { base64, filename } = exportPDF(location, true);
+
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient: to,
+          subject,
+          body: 'Please find the service report PDF attached.\n\nTechnician: Catherine Trudell\nExported: ' + fmtDateTime(new Date()) + '\nReports: ' + list.length,
+          pdf: base64,
+          pdfFilename: filename
+        })
+      });
+
+      showToast('✓ PDF emailed to ' + to);
+    } catch (err) {
+      showToast('✕ Email failed: ' + err.message);
+    }
   }
 
   // ── Email modal ────────────────────────────────────────────────────────────
