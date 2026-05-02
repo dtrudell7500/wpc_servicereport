@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d1117">
-<title>Service Report</title>
+<title>Service Report v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
@@ -58,6 +58,13 @@
     color: var(--accent);
     letter-spacing: 0.1em;
     text-transform: uppercase;
+  }
+  .version-tag {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-top: 2px;
   }
   .badge {
     background: var(--accent-dim);
@@ -359,6 +366,10 @@
   .btn-export-email:hover    { border-color: var(--blue);   color: var(--text); background: rgba(88,166,255,0.25); }
   .btn-export-danger         { border-color: var(--danger); color: var(--danger); }
   .btn-export-danger:hover   { background: rgba(248,81,73,0.1); }
+  .btn-export-submit         { border-color: var(--green); color: var(--green); background: var(--green-dim); font-size: 0.95rem; }
+  .btn-export-submit:hover   { background: rgba(63,185,80,0.25); }
+  .btn-export-combined       { border-color: #e3b341; color: #e3b341; background: rgba(227,179,65,0.1); }
+  .btn-export-combined:hover { background: rgba(227,179,65,0.2); }
 
   /* EMAIL MODAL */
   .modal-overlay {
@@ -438,7 +449,10 @@
 <body>
 
 <header>
-  <h1>⚙ Service Report</h1>
+  <div>
+    <h1>⚙ Service Report</h1>
+    <div class="version-tag">v1.1 — May 1, 2026</div>
+  </div>
   <span class="badge" id="header-badge">BATCH: 0</span>
 </header>
 
@@ -449,6 +463,17 @@
 
 <!-- FORM PANEL -->
 <div class="panel active" id="panel-form">
+
+  <div class="field-group">
+    <label>Technician <span class="required">*</span></label>
+    <select id="technician">
+      <option value="">— Select Technician —</option>
+      <option value="Catherine Trudell">Catherine Trudell</option>
+      <option value="Dan Trudell">Dan Trudell</option>
+      <option value="Ethan Trudell">Ethan Trudell</option>
+      <option value="Bill Renaud">Bill Renaud</option>
+    </select>
+  </div>
 
   <div class="field-group">
     <label>Serial Number <span class="required">*</span></label>
@@ -512,6 +537,13 @@
     <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
     <button class="btn-export btn-export-danger" onclick="clearAll()">✕ Clear All</button>
   </div>
+  <div class="export-bar-full" style="margin-bottom:10px;">
+    <button class="btn-export btn-export-submit" onclick="openSubmitModal()" style="width:100%;">☁ Submit to Central Log</button>
+  </div>
+  <div class="export-bar" style="margin-bottom:10px;">
+    <button class="btn-export btn-export-combined" onclick="requestCombinedReport()" style="width:100%;">📊 Combined Report — Today</button>
+    <button class="btn-export btn-export-combined" onclick="openCombinedDateModal()" style="width:100%;">📊 Combined Report — Date</button>
+  </div>
   <div class="export-bar" style="margin-bottom:10px;">
     <button class="btn-export btn-export-pdf" onclick="exportPDF()" style="width:100%;">📄 Export PDF Report</button>
     <button class="btn-export btn-export-email" onclick="emailPDF()" style="width:100%;">✉ Email PDF Report</button>
@@ -549,6 +581,46 @@
     <div class="modal-btns">
       <button class="btn-modal-send" id="btn-send-email" onclick="doEmailExport()">✉ Send Email</button>
       <button class="btn-modal-cancel" onclick="closeEmailModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT MODAL -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal">
+    <h2>☁ Submit to Central Log</h2>
+    <div class="field-group">
+      <label>Service Location (optional)</label>
+      <select id="submit-location">
+        <option value="">— No specific location —</option>
+        <option value="Harrow Research and Development Centre">Harrow Research and Development Centre</option>
+        <option value="Woodslee Experimental Farm">Woodslee Experimental Farm</option>
+      </select>
+    </div>
+    <p class="modal-note" id="submit-modal-note">
+      All <span id="submit-count">0</span> reports in the current batch will be submitted to the central Google Sheet.
+    </p>
+    <div class="modal-btns">
+      <button class="btn-modal-send" id="btn-submit" onclick="doSubmit()" style="background:var(--green);color:#000;">☁ Submit</button>
+      <button class="btn-modal-cancel" onclick="closeSubmitModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMBINED DATE MODAL -->
+<div class="modal-overlay" id="combined-modal">
+  <div class="modal">
+    <h2>📊 Combined Report — By Date</h2>
+    <div class="field-group">
+      <label>Date <span class="required">*</span></label>
+      <input type="text" id="combined-date" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false">
+    </div>
+    <p class="modal-note">
+      A combined CSV report covering all technicians for the selected date will be emailed to both recipients.
+    </p>
+    <div class="modal-btns">
+      <button class="btn-modal-send" onclick="requestCombinedReport(document.getElementById('combined-date').value)" style="background:#e3b341;color:#000;">📊 Request Report</button>
+      <button class="btn-modal-cancel" onclick="document.getElementById('combined-modal').classList.remove('open')">Cancel</button>
     </div>
   </div>
 </div>
@@ -668,6 +740,26 @@
     }
   }
 
+  // ── Persist last selections ────────────────────────────────────────────────
+  const PERSIST_FIELDS = ['technician', 'location', 'material'];
+
+  function saveSelections() {
+    const prefs = {};
+    PERSIST_FIELDS.forEach(id => {
+      prefs[id] = document.getElementById(id).value;
+    });
+    localStorage.setItem('svc_prefs', JSON.stringify(prefs));
+  }
+
+  function restoreSelections() {
+    try {
+      const prefs = JSON.parse(localStorage.getItem('svc_prefs') || '{}');
+      PERSIST_FIELDS.forEach(id => {
+        if (prefs[id]) document.getElementById(id).value = prefs[id];
+      });
+    } catch(e) {}
+  }
+
   // ── Live clock ─────────────────────────────────────────────────────────────
   function tickClock() {
     document.getElementById('live-clock').textContent = fmtDateTime(new Date());
@@ -717,19 +809,22 @@
 
   // ── Save report (capture time = NOW automatically) ─────────────────────────
   function saveReport() {
+    const technician = document.getElementById('technician').value;
     const serial   = document.getElementById('serial').value.trim();
     const location = document.getElementById('location').value.trim();
     const status   = document.getElementById('status').value;
     const material = document.getElementById('material').value;
     const comments = document.getElementById('comments').value.trim();
 
-    if (!serial)   { alert('Serial number is required.'); return; }
-    if (!location) { alert('Location is required.');      return; }
-    if (!status)   { alert('Please select a status.');    return; }
-    if (!material) { alert('Please select a material.');  return; }
+    if (!technician){ alert('Please select a technician.'); return; }
+    if (!serial)    { alert('Serial number is required.'); return; }
+    if (!location)  { alert('Location is required.');      return; }
+    if (!status)    { alert('Please select a status.');    return; }
+    if (!material)  { alert('Please select a material.');  return; }
 
     const report = {
       id:          Date.now(),
+      technician,
       serial,
       location,
       status,
@@ -742,6 +837,7 @@
     const list = loadReports();
     list.push(report);
     saveReports(list);
+    saveSelections();
     updateBadge(list.length);
     showToast('✓ Report saved to batch');
     clearForm();
@@ -750,9 +846,7 @@
   // ── Clear form ─────────────────────────────────────────────────────────────
   function clearForm() {
     document.getElementById('serial').value   = '';
-    document.getElementById('location').value = '';
     document.getElementById('status').value   = '';
-    document.getElementById('material').value = '';
     document.getElementById('comments').value = '';
     document.getElementById('serial').focus();
   }
@@ -774,7 +868,7 @@
         <div class="report-card">
           <button class="btn-delete" onclick="deleteReport(${r.id})" title="Delete">✕</button>
           <div class="card-serial"># ${escHtml(r.serial)}</div>
-          <div class="card-location">📍 ${escHtml(r.location)}</div>
+          <div class="card-location">📍 ${escHtml(r.location)}${r.technician ? '  &nbsp;👤 ' + escHtml(r.technician) : ''}</div>
           <span class="status-pill pill-${r.status}">${STATUS_LABELS[r.status] || r.status}</span>
           ${r.material ? `<span class="status-pill pill-material">${MATERIAL_LABELS[r.material] || r.material}</span>` : ''}
           <div class="card-meta">
@@ -803,8 +897,9 @@
   // ── Build CSV string ───────────────────────────────────────────────────────
   function buildCSV() {
     const list = loadReports();
-    const headers = ['Serial Number','Location','Status','Material Used','Capture Time','Comments'];
+    const headers = ['Technician','Serial Number','Location','Status','Material Used','Capture Time','Comments'];
     const rows = list.map(r => [
+      r.technician || '',
       r.serial,
       r.location,
       STATUS_LABELS[r.status] || r.status,
@@ -1185,6 +1280,87 @@
     showToast('✓ Mail app opened with CSV data');
   }
 
+  // ── Submit to Central Log ──────────────────────────────────────────────────
+  function openSubmitModal() {
+    const list = loadReports();
+    if (list.length === 0) { alert('No reports to submit.'); return; }
+    document.getElementById('submit-count').textContent = list.length;
+    document.getElementById('submit-modal-note').innerHTML =
+      'All <span id="submit-count">' + list.length + '</span> reports in the current batch will be submitted to the central Google Sheet.';
+    document.getElementById('submit-modal').classList.add('open');
+  }
+
+  function closeSubmitModal() {
+    document.getElementById('submit-modal').classList.remove('open');
+  }
+
+  async function doSubmit() {
+    const list     = loadReports();
+    const location = document.getElementById('submit-location').value;
+    const btn      = document.getElementById('btn-submit');
+
+    // Infer technician from first record
+    const technician = list[0]?.technician || 'Unknown';
+
+    btn.textContent  = '⏳ Submitting...';
+    btn.disabled     = true;
+    document.getElementById('submit-modal-note').textContent = 'Submitting — please wait...';
+
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode:   'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:          'submit',
+          reports:         list,
+          technician,
+          serviceLocation: location
+        })
+      });
+
+      closeSubmitModal();
+      showToast('☁ ' + list.length + ' reports submitted to central log');
+    } catch(err) {
+      document.getElementById('submit-modal-note').textContent = '✕ Submit failed: ' + err.message;
+    } finally {
+      btn.textContent = '☁ Submit';
+      btn.disabled    = false;
+    }
+  }
+
+  // ── Combined Report ────────────────────────────────────────────────────────
+  function openCombinedDateModal() {
+    // Pre-fill today's date
+    document.getElementById('combined-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('combined-modal').classList.add('open');
+  }
+
+  async function requestCombinedReport(dateStr) {
+    // Close date modal if open
+    document.getElementById('combined-modal').classList.remove('open');
+
+    const date = dateStr || new Date().toISOString().slice(0, 10);
+    showToast('⏳ Requesting combined report...');
+
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode:   'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:    'combined_report',
+          date,
+          recipient: 'dan.trudell75@gmail.com, catherine.wpc@gmail.com'
+        })
+      });
+
+      showToast('📊 Combined report emailed for ' + date);
+    } catch(err) {
+      showToast('✕ Request failed: ' + err.message);
+    }
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
   function updateBadge(count) {
     document.getElementById('header-badge').textContent = 'BATCH: ' + count;
@@ -1203,6 +1379,7 @@
 
   // ── Init ───────────────────────────────────────────────────────────────────
   updateBadge(loadReports().length);
+  restoreSelections();
   document.getElementById('serial').focus();
 </script>
 </body>
