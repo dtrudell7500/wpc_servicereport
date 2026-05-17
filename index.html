@@ -6,501 +6,283 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d1117">
-<title>Service Report v1.1</title>
+<title>Service Report v1.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --accent: #f97316;
-    --accent-dim: rgba(249,115,22,0.15);
-    --green: #3fb950;
-    --green-dim: rgba(63,185,80,0.15);
-    --blue: #58a6ff;
-    --blue-dim: rgba(88,166,255,0.15);
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --danger: #f85149;
-    --mono: 'Share Tech Mono', monospace;
-    --sans: 'Barlow Condensed', sans-serif;
-  }
+:root {
+  --bg:#0d1117; --surface:#161b22; --border:#30363d;
+  --accent:#f97316; --accent-dim:rgba(249,115,22,.15);
+  --green:#3fb950; --green-dim:rgba(63,185,80,.15);
+  --blue:#58a6ff; --blue-dim:rgba(88,166,255,.15);
+  --yellow:#e3b341; --yellow-dim:rgba(227,179,65,.15);
+  --purple:#c084fc; --purple-dim:rgba(192,132,252,.15);
+  --text:#e6edf3; --muted:#8b949e; --danger:#f85149;
+  --mono:'Share Tech Mono',monospace; --sans:'Barlow Condensed',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;min-height:100vh;-webkit-tap-highlight-color:transparent}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:2px solid var(--accent);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-left h1{font-family:var(--mono);font-size:.95rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+.hdr-left .ver{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.08em;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.badge{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:.68rem;padding:2px 8px;border-radius:2px}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.online-dot.offline{background:var(--danger);box-shadow:0 0 6px var(--danger)}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 16px;
-    min-height: 100vh;
-    -webkit-tap-highlight-color: transparent;
-  }
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:9px 6px;text-align:center;font-family:var(--sans);font-weight:700;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-  header {
-    background: var(--surface);
-    border-bottom: 2px solid var(--accent);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  header h1 {
-    font-family: var(--mono);
-    font-size: 1rem;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .version-tag {
-    font-family: var(--mono);
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    margin-top: 2px;
-  }
-  .badge {
-    background: var(--accent-dim);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 2px;
-  }
+/* ── PANELS ── */
+.panel{display:none;padding:14px}
+.panel.active{display:block}
 
-  .tabs {
-    display: flex;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .tab {
-    flex: 1;
-    padding: 10px;
-    text-align: center;
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-  }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+/* ── FORM ELEMENTS ── */
+.field-group{margin-bottom:14px}
+label{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+label span.req{color:var(--accent)}
+input[type=text],input[type=password],select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:.95rem;padding:11px 13px;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+input[type=text]:focus,input[type=password]:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+select option{background:var(--bg)}
+select:disabled{opacity:.45;cursor:not-allowed}
+textarea{resize:vertical;min-height:90px;line-height:1.5}
 
-  .panel { display: none; padding: 16px; }
-  .panel.active { display: block; }
+/* ── REMAINING COUNTER ── */
+.remaining-bar{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.remaining-bar .rem-label{font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.remaining-bar .rem-count{font-family:var(--mono);font-size:1.4rem;font-weight:bold;color:var(--accent)}
+.remaining-bar .rem-count.all-done{color:var(--green)}
+.remaining-progress{height:6px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden}
+.remaining-progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+.remaining-progress-fill.done{background:var(--green)}
 
-  .field-group { margin-bottom: 16px; }
+/* ── LIVE CLOCK ── */
+.clock-box{background:var(--surface);border:1px solid var(--green);border-radius:4px;padding:11px 13px;display:flex;align-items:center;gap:10px}
+.clock-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.clock-val{font-family:var(--mono);font-size:.9rem;color:var(--green);flex:1}
+.clock-lbl{font-family:var(--mono);font-size:.63rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 
-  label {
-    display: block;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  label span.required { color: var(--accent); }
+/* ── BUTTONS ── */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.btn{padding:12px 10px;border:none;border-radius:4px;font-family:var(--sans);font-weight:700;font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-save{background:var(--accent);color:#000;grid-column:1/-1;font-size:.95rem}
+.btn-clear{background:transparent;color:var(--muted);border:1px solid var(--border);grid-column:1/-1;font-size:.82rem}
 
-  input[type=text], select, textarea {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 1rem;
-    padding: 12px 14px;
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  input[type=text]:focus, select:focus, textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 36px;
-    cursor: pointer;
-  }
-  select option { background: var(--bg); }
-  textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+/* ── SERIAL ROW ── */
+.serial-row{display:flex;gap:8px;align-items:stretch}
+.serial-row input{flex:1}
+.btn-scan{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:0 13px;font-size:1.2rem;cursor:pointer;flex-shrink:0;transition:opacity .15s;display:flex;align-items:center;justify-content:center}
+.btn-scan:active{opacity:.7}
 
-  /* LIVE CLOCK BOX */
-  .clock-box {
-    background: var(--surface);
-    border: 1px solid var(--green);
-    border-radius: 4px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .clock-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    flex-shrink: 0;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
-  .clock-value {
-    font-family: var(--mono);
-    font-size: 0.95rem;
-    color: var(--green);
-    flex: 1;
-  }
-  .clock-label {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
+/* ── TOAST ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;font-family:var(--mono);font-size:.78rem;padding:9px 18px;border-radius:4px;transition:transform .3s;z-index:999;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.error{background:var(--danger);color:#fff}
+#toast.warn{background:var(--yellow);color:#000}
 
-  /* SERIAL SCAN ROW */
-  .serial-row { display: flex; gap: 8px; align-items: stretch; }
-  .serial-row input { flex: 1; }
-  .btn-scan {
-    background: var(--accent-dim);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 4px;
-    padding: 0 14px;
-    font-size: 1.3rem;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: opacity 0.15s;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .btn-scan:active { opacity: 0.7; }
+/* ── PILLS ── */
+.pill{display:inline-block;font-family:var(--mono);font-size:.63rem;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.09em;margin-right:4px;margin-bottom:4px}
+.pill-no-activity{background:rgba(139,148,158,.15);color:var(--muted);border:1px solid var(--border)}
+.pill-activity-lt25{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.4)}
+.pill-activity-lt50{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(249,115,22,.4)}
+.pill-activity-gt50{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,185,80,.4)}
+.pill-inaccessible{background:rgba(248,81,73,.15);color:var(--danger);border:1px solid rgba(248,81,73,.4)}
+.pill-material{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,.4)}
 
-  /* SCANNER MODAL */
-  .scan-overlay {
-    display: none; position: fixed; inset: 0;
-    background: #000; z-index: 300; flex-direction: column;
-  }
-  .scan-overlay.open { display: flex; }
-  .scan-header {
-    background: var(--surface);
-    border-bottom: 2px solid var(--accent);
-    padding: 12px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;
-  }
-  .scan-header h2 {
-    font-family: var(--mono); font-size: 0.9rem;
-    color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
-  }
-  .btn-scan-close {
-    background: none; border: none;
-    color: var(--muted); font-size: 1.4rem; cursor: pointer; line-height: 1;
-  }
-  .scan-viewport { flex: 1; position: relative; overflow: hidden; }
-  #scan-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .scan-aim {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 260px; height: 150px;
-    border: 2px solid var(--accent); border-radius: 6px;
-    box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
-    pointer-events: none;
-  }
-  .scan-line {
-    position: absolute; left: 4px; right: 4px; height: 2px;
-    background: var(--accent); opacity: 0.85;
-    animation: scanline 2s ease-in-out infinite;
-  }
-  @keyframes scanline { 0% { top: 4px; } 100% { top: calc(100% - 4px); } }
-  .scan-status {
-    position: absolute; bottom: 28px; left: 0; right: 0;
-    text-align: center; font-family: var(--mono);
-    font-size: 0.78rem; color: #fff; letter-spacing: 0.08em;
-    text-shadow: 0 1px 4px #000;
-  }
+/* ── BATCH CARDS ── */
+.report-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:11px 13px;margin-bottom:9px;position:relative}
+.card-device{font-family:var(--mono);font-size:.95rem;color:var(--accent);margin-bottom:2px}
+.card-facility{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-bottom:5px}
+.card-meta{font-family:var(--mono);font-size:.68rem;color:var(--muted);line-height:1.8;margin-top:6px}
+.card-comment{font-family:var(--sans);font-size:.82rem;color:var(--text);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-weight:400}
+.btn-delete{position:absolute;top:9px;right:9px;background:none;border:none;color:var(--danger);font-size:.95rem;cursor:pointer;opacity:.6;line-height:1}
+.btn-delete:hover{opacity:1}
 
-  /* BUTTONS */
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .btn {
-    padding: 13px 10px;
-    border: none;
-    border-radius: 4px;
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .btn:active { transform: scale(0.97); opacity: 0.85; }
-  .btn-save  { background: var(--accent); color: #000; grid-column: 1/-1; font-size: 1rem; }
-  .btn-clear { background: transparent; color: var(--muted); border: 1px solid var(--border); grid-column: 1/-1; font-size: 0.85rem; }
+/* ── EXPORT BARS ── */
+.export-bar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.btn-export{padding:11px;border-radius:4px;font-family:var(--sans);font-weight:700;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:border-color .15s,color .15s;width:100%}
+.btn-export:hover{border-color:var(--accent);color:var(--accent)}
+.btn-export-pdf{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
+.btn-export-email{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.btn-export-submit{border-color:var(--green);color:var(--green);background:var(--green-dim);font-size:.88rem}
+.btn-export-combined{border-color:var(--yellow);color:var(--yellow);background:var(--yellow-dim)}
+.btn-export-danger{border-color:var(--danger);color:var(--danger)}
+.btn-export-danger:hover{background:rgba(248,81,73,.1)}
 
-  /* TOAST */
-  #toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--green);
-    color: #000;
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    padding: 10px 20px;
-    border-radius: 4px;
-    transition: transform 0.3s;
-    z-index: 999;
-    white-space: nowrap;
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+/* ── BATCH COUNT ── */
+#batch-count{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-bottom:11px}
+#batch-count span{color:var(--accent)}
 
-  /* BATCH */
-  #batch-count {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-  #batch-count span { color: var(--accent); }
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:36px 18px;color:var(--muted);font-family:var(--mono);font-size:.82rem}
+.empty-state .icon{font-size:2.2rem;margin-bottom:10px}
 
-  .report-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-  .card-serial   { font-family: var(--mono); font-size: 1rem; color: var(--accent); margin-bottom: 2px; }
-  .card-location { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
-  .card-meta     { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); line-height: 1.8; }
-  .card-comment  {
-    font-family: var(--sans); font-size: 0.85rem; color: var(--text);
-    margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 400;
-  }
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:18px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:18px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:var(--mono);font-size:.82rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.modal .field-group{margin-bottom:12px}
+.modal-note{font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-top:7px;line-height:1.5}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.btn-modal-primary{padding:11px;border:none;border-radius:4px;font-family:var(--sans);font-weight:700;font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.btn-modal-cancel{padding:11px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;font-family:var(--sans);font-weight:700;font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 
-  .status-pill {
-    display: inline-block;
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-  }
-  .pill-no-activity   { background: rgba(139,148,158,0.15); color: var(--muted);  border: 1px solid var(--border); }
-  .pill-activity-lt25 { background: rgba(88,166,255,0.15);  color: #58a6ff;      border: 1px solid #58a6ff55; }
-  .pill-activity-lt50 { background: var(--accent-dim);      color: var(--accent); border: 1px solid rgba(249,115,22,0.4); }
-  .pill-activity-gt50 { background: var(--green-dim);       color: var(--green);  border: 1px solid rgba(63,185,80,0.4); }
-  .pill-material      { background: rgba(188,140,255,0.15); color: #c084fc;      border: 1px solid rgba(192,132,252,0.4); margin-left: 4px; }
+/* ── ADMIN ── */
+.admin-section{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:13px;margin-bottom:14px}
+.admin-section-title{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.admin-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.admin-item:last-child{border-bottom:none}
+.admin-item-label{font-family:var(--mono);font-size:.82rem;color:var(--text)}
+.admin-item-sub{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:2px}
+.admin-item-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-admin{padding:5px 10px;border-radius:3px;font-family:var(--mono);font-size:.65rem;letter-spacing:.06em;cursor:pointer;border:1px solid var(--border);background:none;color:var(--muted);transition:all .15s}
+.btn-admin.edit{color:var(--blue);border-color:var(--blue)}
+.btn-admin.del{color:var(--danger);border-color:var(--danger)}
+.btn-admin.add{color:var(--green);border-color:var(--green);padding:5px 14px}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px 13px;margin-bottom:14px}
+.sync-info{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.sync-info span{color:var(--text)}
+.btn-sync{padding:6px 14px;border-radius:3px;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;cursor:pointer;border:1px solid var(--green);background:var(--green-dim);color:var(--green)}
+.apikey-bar{display:flex;align-items:center;gap:8px}
+.apikey-bar input{flex:1}
+.conn-status{font-family:var(--mono);font-size:.7rem;padding:4px 10px;border-radius:3px}
+.conn-status.ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,185,80,.4)}
+.conn-status.fail{background:rgba(248,81,73,.15);color:var(--danger);border:1px solid rgba(248,81,73,.4)}
+.conn-status.checking{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.4)}
 
-  .btn-delete {
-    position: absolute; top: 10px; right: 10px;
-    background: none; border: none;
-    color: var(--danger); font-size: 1rem;
-    cursor: pointer; opacity: 0.6; line-height: 1;
-  }
-  .btn-delete:hover { opacity: 1; }
+/* ── SCANNER ── */
+.scan-overlay{display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column}
+.scan-overlay.open{display:flex}
+.scan-header{background:var(--surface);border-bottom:2px solid var(--accent);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.scan-header h2{font-family:var(--mono);font-size:.88rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+.btn-scan-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1}
+.scan-viewport{flex:1;position:relative;overflow:hidden}
+#scan-video{width:100%;height:100%;object-fit:cover;display:block}
+.scan-aim{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:150px;border:2px solid var(--accent);border-radius:6px;box-shadow:0 0 0 2000px rgba(0,0,0,.5);pointer-events:none}
+.scan-line{position:absolute;left:4px;right:4px;height:2px;background:var(--accent);opacity:.85;animation:scanline 2s ease-in-out infinite}
+@keyframes scanline{0%{top:4px}100%{top:calc(100% - 4px)}}
+.scan-status{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:.75rem;color:#fff;letter-spacing:.08em;text-shadow:0 1px 4px #000}
 
-  /* EXPORT BAR — 3 buttons */
-  .export-bar {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .export-bar-full {
-    margin-bottom: 16px;
-  }
-  .btn-export {
-    padding: 12px;
-    border-radius: 4px;
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    transition: border-color 0.15s, color 0.15s;
-    width: 100%;
-  }
-  .btn-export:hover          { border-color: var(--accent); color: var(--accent); }
-  .btn-export-pdf            { border-color: #a78bfa; color: #a78bfa; background: rgba(167,139,250,0.1); }
-  .btn-export-pdf:hover      { background: rgba(167,139,250,0.2); border-color: #a78bfa; color: #a78bfa; }
-  .btn-export-email          { border-color: var(--blue);   color: var(--blue); background: var(--blue-dim); }
-  .btn-export-email:hover    { border-color: var(--blue);   color: var(--text); background: rgba(88,166,255,0.25); }
-  .btn-export-danger         { border-color: var(--danger); color: var(--danger); }
-  .btn-export-danger:hover   { background: rgba(248,81,73,0.1); }
-  .btn-export-submit         { border-color: var(--green); color: var(--green); background: var(--green-dim); font-size: 0.95rem; }
-  .btn-export-submit:hover   { background: rgba(63,185,80,0.25); }
-  .btn-export-combined       { border-color: #e3b341; color: #e3b341; background: rgba(227,179,65,0.1); }
-  .btn-export-combined:hover { background: rgba(227,179,65,0.2); }
+/* ── SETUP SCREEN ── */
+.setup-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center;padding:24px}
+.setup-screen.open{display:flex}
+.setup-card{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:28px 22px;width:100%;max-width:400px}
+.setup-card h1{font-family:var(--mono);font-size:1.1rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.setup-card p{font-family:var(--mono);font-size:.75rem;color:var(--muted);margin-bottom:22px;line-height:1.6}
 
-  /* EMAIL MODAL */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 20px;
-    width: 100%;
-    max-width: 420px;
-  }
-  .modal h2 {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-  .modal .field-group { margin-bottom: 14px; }
-  .modal-note {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: var(--muted);
-    margin-top: 8px;
-    line-height: 1.5;
-  }
-  .modal-btns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 18px;
-  }
-  .btn-modal-send {
-    padding: 12px;
-    background: var(--blue);
-    color: #000;
-    border: none;
-    border-radius: 4px;
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .btn-modal-cancel {
-    padding: 12px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
+/* ── DEVICE FILTER ── */
+.device-filter{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.device-filter input{flex:1;font-size:.82rem;padding:8px 11px}
 
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-    color: var(--muted); font-family: var(--mono); font-size: 0.85rem;
-  }
-  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+/* ── FACILITY BADGE on device list ── */
+.fac-tag{font-family:var(--mono);font-size:.6rem;color:var(--muted);background:var(--border);padding:1px 6px;border-radius:2px;margin-left:6px}
 </style>
 </head>
 <body>
 
-<header>
-  <div>
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- LOGIN SCREEN                                              -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="setup-screen" id="login-screen">
+  <div class="setup-card">
     <h1>⚙ Service Report</h1>
-    <div class="version-tag">v1.1 — May 1, 2026</div>
+    <p>Windsor Pest Control, Inc.<br>Sign in with your assigned technician account to begin.</p>
+    <div class="field-group">
+      <label>Username <span class="req">*</span></label>
+      <input type="text" id="login-username" placeholder="Enter username..." autocomplete="username" spellcheck="false" autocorrect="off" autocapitalize="off">
+    </div>
+    <div class="field-group">
+      <label>Password <span class="req">*</span></label>
+      <input type="password" id="login-password" placeholder="Enter password..." autocomplete="current-password">
+    </div>
+    <div class="field-group" id="login-url-group" style="display:none">
+      <label>API Base URL</label>
+      <input type="text" id="login-baseurl" value="https://tasks.point2this.com" autocomplete="off" spellcheck="false">
+    </div>
+    <p class="modal-note" id="login-note" style="margin-bottom:12px">
+      Contact your administrator if you need an account.
+      <br><a href="#" onclick="toggleUrlField()" style="color:var(--muted);font-size:.65rem">Advanced settings</a>
+    </p>
+    <button class="btn btn-save" id="btn-login" onclick="doLogin()" style="width:100%">Sign In</button>
   </div>
-  <span class="badge" id="header-badge">BATCH: 0</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- MAIN APP                                                  -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="hdr-left">
+    <h1>⚙ Service Report</h1>
+    <div class="ver">v1.2 — May 1, 2026 &nbsp;·&nbsp; <span id="hdr-user" style="color:var(--green)"></span></div>
+  </div>
+  <div class="hdr-right">
+    <div class="online-dot" id="online-dot" title="Online"></div>
+    <span class="badge" id="header-badge">BATCH: 0</span>
+  </div>
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('form', event)">New Report</button>
-  <button class="tab" onclick="switchTab('batch', event)">Batch Queue</button>
+  <button class="tab active" onclick="switchTab('form',event)">New Report</button>
+  <button class="tab" onclick="switchTab('batch',event)">Batch Queue</button>
+  <button class="tab" onclick="switchTab('admin',event)">Admin</button>
 </div>
 
-<!-- FORM PANEL -->
+<!-- ══════════════════════════════════════ FORM PANEL ══════ -->
 <div class="panel active" id="panel-form">
 
   <div class="field-group">
-    <label>Technician <span class="required">*</span></label>
-    <select id="technician">
-      <option value="">— Select Technician —</option>
-      <option value="Catherine Trudell">Catherine Trudell</option>
-      <option value="Dan Trudell">Dan Trudell</option>
-      <option value="Ethan Trudell">Ethan Trudell</option>
-      <option value="Bill Renaud">Bill Renaud</option>
+    <label>Facility <span class="req">*</span></label>
+    <select id="facility" onchange="onFacilityChange()">
+      <option value="">— Select Facility —</option>
     </select>
   </div>
 
-  <div class="field-group">
-    <label>Serial Number <span class="required">*</span></label>
-    <div class="serial-row">
-      <input type="text" id="serial" placeholder="Scan or type serial #" autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="btn-scan" onclick="openScanner()" title="Scan barcode">📷</button>
+  <div id="remaining-container" style="display:none">
+    <div class="remaining-bar">
+      <div>
+        <div class="rem-label">Devices Remaining</div>
+        <div class="remaining-progress"><div class="remaining-progress-fill" id="rem-fill" style="width:0%"></div></div>
+      </div>
+      <div class="rem-count" id="rem-count">—</div>
     </div>
   </div>
 
   <div class="field-group">
-    <label>Location <span class="required">*</span></label>
-    <input type="text" id="location" placeholder="e.g. Warehouse A, Bay 3" autocomplete="off" spellcheck="false">
+    <label>Device # — Location <span class="req">*</span></label>
+    <div class="device-filter">
+      <input type="text" id="device-search" placeholder="Search devices..." oninput="filterDevices()" autocomplete="off" spellcheck="false" style="display:none">
+    </div>
+    <select id="device" onchange="onDeviceChange()" disabled>
+      <option value="">— Select Facility first —</option>
+    </select>
   </div>
 
   <div class="field-group">
-    <label>Status <span class="required">*</span></label>
+    <label>Status <span class="req">*</span></label>
     <select id="status">
       <option value="">— Select Status —</option>
       <option value="no-activity">No Activity</option>
       <option value="activity-lt25">Activity &lt;25%</option>
       <option value="activity-lt50">Activity &lt;50%</option>
       <option value="activity-gt50">Activity &gt;50%</option>
+      <option value="inaccessible">Inaccessible</option>
     </select>
   </div>
 
   <div class="field-group">
-    <label>Material Used <span class="required">*</span></label>
+    <label>Material Used <span class="req">*</span></label>
     <select id="material">
       <option value="">— Select Material —</option>
       <option value="none">None</option>
@@ -511,17 +293,17 @@
   </div>
 
   <div class="field-group">
-    <label>Capture Time <span style="color:var(--green);font-size:0.6rem;">● LIVE</span></label>
+    <label>Capture Time <span style="color:var(--green);font-size:.58rem">● LIVE</span></label>
     <div class="clock-box">
       <div class="clock-dot"></div>
-      <div class="clock-value" id="live-clock">—</div>
-      <div class="clock-label">Device Time</div>
+      <div class="clock-val" id="live-clock">—</div>
+      <div class="clock-lbl">Device Time</div>
     </div>
   </div>
 
   <div class="field-group">
     <label>Service Comments</label>
-    <textarea id="comments" placeholder="Describe work performed, parts used, findings..."></textarea>
+    <textarea id="comments" placeholder="Observations, findings, work performed..."></textarea>
   </div>
 
   <div class="btn-row">
@@ -531,61 +313,128 @@
 
 </div>
 
-<!-- BATCH PANEL -->
+<!-- ══════════════════════════════════════ BATCH PANEL ═════ -->
 <div class="panel" id="panel-batch">
+
   <div class="export-bar">
     <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
     <button class="btn-export btn-export-danger" onclick="clearAll()">✕ Clear All</button>
   </div>
-  <div class="export-bar-full" style="margin-bottom:10px;">
-    <button class="btn-export btn-export-submit" onclick="openSubmitModal()" style="width:100%;">☁ Submit to Central Log</button>
+  <div style="margin-bottom:9px">
+    <button class="btn-export btn-export-submit" onclick="openSubmitModal()" style="width:100%">☁ Submit to Central Log</button>
   </div>
-  <div class="export-bar" style="margin-bottom:10px;">
-    <button class="btn-export btn-export-combined" onclick="requestCombinedReport()" style="width:100%;">📊 Combined Report — Today</button>
-    <button class="btn-export btn-export-combined" onclick="openCombinedDateModal()" style="width:100%;">📊 Combined Report — Date</button>
+  <div class="export-bar" style="margin-bottom:9px">
+    <button class="btn-export btn-export-combined" onclick="requestCombinedReport()">📊 Combined — Today</button>
+    <button class="btn-export btn-export-combined" onclick="openCombinedDateModal()">📊 Combined — Date</button>
   </div>
-  <div class="export-bar" style="margin-bottom:10px;">
-    <button class="btn-export btn-export-pdf" onclick="exportPDF()" style="width:100%;">📄 Export PDF Report</button>
-    <button class="btn-export btn-export-email" onclick="emailPDF()" style="width:100%;">✉ Email PDF Report</button>
+  <div class="export-bar" style="margin-bottom:9px">
+    <button class="btn-export btn-export-pdf" onclick="exportPDF()">📄 Export PDF</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF()">✉ Email PDF</button>
   </div>
-  <div class="export-bar" style="margin-bottom:10px;">
-    <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Harrow Research and Development Centre', address: '2585 Essex County Rd 20, Harrow, ON N0R 1G0' })" style="width:100%;">📄 Export PDF — Harrow</button>
-    <button class="btn-export btn-export-email" onclick="emailPDF({ name: 'Harrow Research and Development Centre', address: '2585 Essex County Rd 20, Harrow, ON N0R 1G0' })" style="width:100%;">✉ Email PDF — Harrow</button>
+  <div class="export-bar" style="margin-bottom:9px">
+    <button class="btn-export btn-export-pdf" onclick="exportPDF({name:'Harrow Research and Development Centre',address:'2585 Essex County Rd 20, Harrow, ON N0R 1G0'})">📄 PDF — Harrow</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF({name:'Harrow Research and Development Centre',address:'2585 Essex County Rd 20, Harrow, ON N0R 1G0'})">✉ Email — Harrow</button>
   </div>
-  <div class="export-bar" style="margin-bottom:10px;">
-    <button class="btn-export btn-export-pdf" onclick="exportPDF({ name: 'Woodslee Experimental Farm', address: '1376 County Rd. 46, Woodslee' })" style="width:100%;">📄 Export PDF — Woodslee</button>
-    <button class="btn-export btn-export-email" onclick="emailPDF({ name: 'Woodslee Experimental Farm', address: '1376 County Rd. 46, Woodslee' })" style="width:100%;">✉ Email PDF — Woodslee</button>
+  <div class="export-bar" style="margin-bottom:14px">
+    <button class="btn-export btn-export-pdf" onclick="exportPDF({name:'Woodslee Experimental Farm',address:'1376 County Rd. 46, Woodslee'})">📄 PDF — Woodslee</button>
+    <button class="btn-export btn-export-email" onclick="emailPDF({name:'Woodslee Experimental Farm',address:'1376 County Rd. 46, Woodslee'})">✉ Email — Woodslee</button>
   </div>
-  <div class="export-bar-full">
-    <button class="btn-export btn-export-email" onclick="openEmailModal()" style="width:100%;">✉ Export &amp; Email</button>
+  <div style="margin-bottom:14px">
+    <button class="btn-export btn-export-email" onclick="openEmailModal()" style="width:100%">✉ Export &amp; Email CSV</button>
   </div>
+
   <div id="batch-count">Saved reports: <span>0</span></div>
   <div id="batch-list"></div>
+
 </div>
 
-<!-- EMAIL MODAL -->
+<!-- ══════════════════════════════════════ ADMIN PANEL ═════ -->
+<div class="panel" id="panel-admin">
+
+  <!-- Connection -->
+  <div class="admin-section">
+    <div class="admin-section-title">Session</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-family:var(--mono);font-size:.82rem;color:var(--text)" id="admin-user-display">—</div>
+        <div style="font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-top:2px" id="admin-role-display"></div>
+      </div>
+      <button class="btn-admin del" onclick="doLogout()" style="padding:6px 14px;font-size:.72rem">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Connection -->
+  <div class="admin-section">
+    <div class="admin-section-title">API Connection</div>
+    <div class="field-group">
+      <label>Base URL</label>
+      <input type="text" id="admin-baseurl" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>API Key</label>
+      <div class="apikey-bar">
+        <input type="password" id="admin-apikey" autocomplete="off" spellcheck="false">
+        <button class="btn-sync" onclick="testConnection()" style="white-space:nowrap">Test</button>
+      </div>
+    </div>
+    <div id="conn-status-display" style="margin-top:8px"></div>
+    <button class="btn-sync" onclick="saveApiConfig()" style="margin-top:10px;width:100%">Save API Config</button>
+  </div>
+
+  <!-- Sync -->
+  <div class="sync-bar">
+    <div class="sync-info">Last sync: <span id="last-sync-display">Never</span></div>
+    <button class="btn-sync" onclick="syncAll(true)">⟳ Sync Now</button>
+  </div>
+
+  <!-- Facilities -->
+  <div class="admin-section">
+    <div class="admin-section-title">
+      <span>Facilities</span>
+      <button class="btn-admin add" onclick="openFacilityModal()">+ Add</button>
+    </div>
+    <div id="admin-facility-list"><div class="empty-state" style="padding:16px"><div>No facilities loaded</div></div></div>
+  </div>
+
+  <!-- Service Items -->
+  <div class="admin-section">
+    <div class="admin-section-title">
+      <span>Service Items</span>
+      <button class="btn-admin add" onclick="openDeviceModal()">+ Add</button>
+    </div>
+    <div class="field-group" style="margin-bottom:10px">
+      <select id="admin-facility-filter" onchange="renderAdminDevices()">
+        <option value="">— All Facilities —</option>
+      </select>
+    </div>
+    <div id="admin-device-list"><div class="empty-state" style="padding:16px"><div>No service items loaded</div></div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════ MODALS ════════════════════════════════ -->
+
+<!-- Email Modal -->
 <div class="modal-overlay" id="email-modal">
   <div class="modal">
     <h2>✉ Export &amp; Email</h2>
     <div class="field-group">
-      <label>Recipient Email <span class="required">*</span></label>
+      <label>Recipient Email <span class="req">*</span></label>
       <input type="text" id="email-to" value="dan.trudell75@gmail.com, catherine.wpc@gmail.com" autocomplete="email" autocorrect="off" spellcheck="false">
     </div>
     <div class="field-group">
       <label>Subject</label>
       <input type="text" id="email-subject" value="Service Reports Export">
     </div>
-    <p class="modal-note" id="email-modal-note">
-      Your mail app will open with the CSV data pasted directly in the email body.
-    </p>
+    <p class="modal-note">CSV data will be pasted in the email body.</p>
     <div class="modal-btns">
-      <button class="btn-modal-send" id="btn-send-email" onclick="doEmailExport()">✉ Send Email</button>
-      <button class="btn-modal-cancel" onclick="closeEmailModal()">Cancel</button>
+      <button class="btn-modal-primary" onclick="doEmailExport()" style="background:var(--blue);color:#000">Send Email</button>
+      <button class="btn-modal-cancel" onclick="closeModal('email-modal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- SUBMIT MODAL -->
+<!-- Submit Modal -->
 <div class="modal-overlay" id="submit-modal">
   <div class="modal">
     <h2>☁ Submit to Central Log</h2>
@@ -597,35 +446,81 @@
         <option value="Woodslee Experimental Farm">Woodslee Experimental Farm</option>
       </select>
     </div>
-    <p class="modal-note" id="submit-modal-note">
-      All <span id="submit-count">0</span> reports in the current batch will be submitted to the central Google Sheet.
-    </p>
+    <p class="modal-note" id="submit-modal-note">All batch reports will be submitted.</p>
     <div class="modal-btns">
-      <button class="btn-modal-send" id="btn-submit" onclick="doSubmit()" style="background:var(--green);color:#000;">☁ Submit</button>
-      <button class="btn-modal-cancel" onclick="closeSubmitModal()">Cancel</button>
+      <button class="btn-modal-primary" id="btn-submit" onclick="doSubmit()" style="background:var(--green);color:#000">☁ Submit</button>
+      <button class="btn-modal-cancel" onclick="closeModal('submit-modal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- COMBINED DATE MODAL -->
+<!-- Combined Date Modal -->
 <div class="modal-overlay" id="combined-modal">
   <div class="modal">
     <h2>📊 Combined Report — By Date</h2>
     <div class="field-group">
-      <label>Date <span class="required">*</span></label>
+      <label>Date <span class="req">*</span></label>
       <input type="text" id="combined-date" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false">
     </div>
-    <p class="modal-note">
-      A combined CSV report covering all technicians for the selected date will be emailed to both recipients.
-    </p>
+    <p class="modal-note">Combined CSV for all technicians on this date emailed to both recipients.</p>
     <div class="modal-btns">
-      <button class="btn-modal-send" onclick="requestCombinedReport(document.getElementById('combined-date').value)" style="background:#e3b341;color:#000;">📊 Request Report</button>
-      <button class="btn-modal-cancel" onclick="document.getElementById('combined-modal').classList.remove('open')">Cancel</button>
+      <button class="btn-modal-primary" onclick="requestCombinedReport(document.getElementById('combined-date').value);closeModal('combined-modal')" style="background:var(--yellow);color:#000">Request Report</button>
+      <button class="btn-modal-cancel" onclick="closeModal('combined-modal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- SCANNER MODAL -->
+<!-- Facility Modal -->
+<div class="modal-overlay" id="facility-modal">
+  <div class="modal">
+    <h2 id="facility-modal-title">Add Facility</h2>
+    <input type="hidden" id="facility-edit-id">
+    <div class="field-group">
+      <label>Facility Name <span class="req">*</span></label>
+      <input type="text" id="facility-name" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>Address</label>
+      <input type="text" id="facility-address" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-primary" onclick="saveFacility()" style="background:var(--accent);color:#000">Save</button>
+      <button class="btn-modal-cancel" onclick="closeModal('facility-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Device Modal -->
+<div class="modal-overlay" id="device-modal">
+  <div class="modal">
+    <h2 id="device-modal-title">Add Service Item</h2>
+    <input type="hidden" id="device-edit-id">
+    <div class="field-group">
+      <label>Facility <span class="req">*</span></label>
+      <select id="device-facility">
+        <option value="">— Select Facility —</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>Device # <span class="req">*</span></label>
+      <input type="text" id="device-number" placeholder="e.g. D-001" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>Location Description <span class="req">*</span></label>
+      <input type="text" id="device-location" placeholder="e.g. Warehouse Bay 3" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>Device Type</label>
+      <input type="text" id="device-type" placeholder="e.g. Bait Station" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-primary" onclick="saveDevice()" style="background:var(--accent);color:#000">Save</button>
+      <button class="btn-modal-cancel" onclick="closeModal('device-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Modal -->
 <div class="scan-overlay" id="scan-overlay">
   <div class="scan-header">
     <h2>📷 Scan Barcode</h2>
@@ -633,9 +528,7 @@
   </div>
   <div class="scan-viewport">
     <video id="scan-video" autoplay playsinline muted></video>
-    <div class="scan-aim">
-      <div class="scan-line"></div>
-    </div>
+    <div class="scan-aim"><div class="scan-line"></div></div>
     <div class="scan-status" id="scan-status">Point camera at barcode or QR code</div>
   </div>
 </div>
@@ -643,744 +536,1061 @@
 <div id="toast"></div>
 
 <script>
-  // ── Barcode Scanner ────────────────────────────────────────────────────────
-  let codeReader = null;
-  let scannerActive = false;
+// ══════════════════════════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ══════════════════════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZraLmP1g_14W-KfheirRik2x0nbL1-W7dzCY3dISkQX2unvdEUbxoimOTnCf8ORj5/exec';
+const RECENT_DAYS = 5; // days to look back for "remaining" counter
 
-  async function openScanner() {
-    document.getElementById('scan-overlay').classList.add('open');
-    document.getElementById('scan-status').textContent = 'Starting camera...';
+const STATUS_LABELS = {
+  'no-activity':   'No Activity',
+  'activity-lt25': 'Activity <25%',
+  'activity-lt50': 'Activity <50%',
+  'activity-gt50': 'Activity >50%',
+  'inaccessible':  'Inaccessible'
+};
+const STATUS_PILL = {
+  'no-activity':   'pill-no-activity',
+  'activity-lt25': 'pill-activity-lt25',
+  'activity-lt50': 'pill-activity-lt50',
+  'activity-gt50': 'pill-activity-gt50',
+  'inaccessible':  'pill-inaccessible'
+};
+const MATERIAL_LABELS = {
+  'none':     'None',
+  'contrac':  'Contrac | Bromadiolone 0.005% | PCP# 22239',
+  'final':    'Final | Brodifacoum 0.005% | PCP# 25423',
+  'flatline': 'Flatline | Chlorophacinone 0.005% | PCP# 34219'
+};
+const PERSIST_FIELDS = ['technician','facility','material'];
 
-    try {
-      // ZXing via unpkg exposes as ZXingLibrary
-      const ZXing = window.ZXingLibrary || window.ZXing;
-      if (ZXing && ZXing.BrowserMultiFormatReader) {
-        await startZXing(ZXing);
-      } else if ('BarcodeDetector' in window) {
-        await startBarcodeDetector();
-      } else {
-        // Last resort — raw getUserMedia + canvas decode attempt
-        await startRawCamera();
-      }
-    } catch (err) {
-      document.getElementById('scan-status').textContent = '⚠ ' + err.message;
-    }
-  }
+// ══════════════════════════════════════════════════════════════
+// STORAGE HELPERS
+// ══════════════════════════════════════════════════════════════
+const LS = {
+  get: (k, def=null) => { try { const v=localStorage.getItem(k); return v!==null?JSON.parse(v):def; } catch{ return def; } },
+  set: (k,v) => { try { localStorage.setItem(k,JSON.stringify(v)); } catch(e){ console.error('LS.set',e); } },
+  del: (k) => localStorage.removeItem(k)
+};
 
-  async function startZXing(ZXing) {
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    scannerActive = true;
-    document.getElementById('scan-status').textContent = 'Point camera at barcode or QR code';
+function loadReports()      { return LS.get('svc_reports', []); }
+function saveReports(list)  { LS.set('svc_reports', list); }
+function loadFacilities()   { return LS.get('svc_facilities', []); }
+function saveFacilitiesCache(list) { LS.set('svc_facilities', list); }
+function loadDevices()      { return LS.get('svc_devices', []); }
+function saveDevicesCache(list)    { LS.set('svc_devices', list); }
 
-    // Use environment-facing camera constraint directly
-    const hints = new Map();
-    await codeReader.decodeFromConstraints(
-      { video: { facingMode: 'environment' } },
-      'scan-video',
-      (result, err) => {
-        if (result && scannerActive) {
-          onScanSuccess(result.getText());
-        }
-      }
-    );
-  }
+// ══════════════════════════════════════════════════════════════
+// AUTH — JWT LOGIN
+// ══════════════════════════════════════════════════════════════
+function getApiConfig() {
+  return { key: LS.get('api_key',''), url: LS.get('api_url','https://tasks.point2this.com') };
+}
+function getToken()    { return LS.get('auth_token',''); }
+function getAuthUser() { return LS.get('auth_user', null); }
 
-  async function startBarcodeDetector() {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('scan-video');
-    video.srcObject = stream;
-    await video.play();
-    const detector = new BarcodeDetector();
-    scannerActive = true;
-    document.getElementById('scan-status').textContent = 'Point camera at barcode or QR code';
-    const tick = async () => {
-      if (!scannerActive) return;
-      try {
-        const codes = await detector.detect(video);
-        if (codes.length > 0) { onScanSuccess(codes[0].rawValue); return; }
-      } catch(e) {}
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
-
-  async function startRawCamera() {
-    // iPhone Safari fallback — show camera, let user read and type
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('scan-video');
-    video.srcObject = stream;
-    await video.play();
-    scannerActive = true;
-    document.getElementById('scan-status').textContent = 'Camera active — read barcode and type below, or close';
-  }
-
-  function onScanSuccess(value) {
-    scannerActive = false;
-    document.getElementById('serial').value = value;
-    document.getElementById('scan-status').textContent = '✓ Scanned: ' + value;
-    setTimeout(() => closeScanner(), 600);
-    showToast('✓ Serial scanned: ' + value);
-  }
-
-  function closeScanner() {
-    scannerActive = false;
-    document.getElementById('scan-overlay').classList.remove('open');
-
-    // Stop ZXing
-    if (codeReader) {
-      try { codeReader.reset(); } catch(e) {}
-      codeReader = null;
-    }
-
-    // Stop any raw camera stream
-    const video = document.getElementById('scan-video');
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach(t => t.stop());
-      video.srcObject = null;
-    }
-  }
-
-  // ── Persist last selections ────────────────────────────────────────────────
-  const PERSIST_FIELDS = ['technician', 'location', 'material'];
-
-  function saveSelections() {
-    const prefs = {};
-    PERSIST_FIELDS.forEach(id => {
-      prefs[id] = document.getElementById(id).value;
+function parseJwt(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(atob(base64));
+  } catch(e) { return null; }
+}
+function isTokenValid() {
+  const token = getToken(); if (!token) return false;
+  const p = parseJwt(token); if (!p) return false;
+  return p.exp ? (p.exp * 1000) > Date.now() : true;
+}
+function checkAuth() {
+  if (!isTokenValid()) showLoginScreen();
+  else { hideLoginScreen(); applyAuthUser(); }
+}
+function showLoginScreen() {
+  document.getElementById('login-screen').classList.add('open');
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-note').innerHTML =
+    'Contact your administrator if you need an account.<br>' +
+    '<a href="#" onclick="toggleUrlField()" style="color:var(--muted);font-size:.65rem">Advanced settings</a>';
+  setTimeout(() => document.getElementById('login-username').focus(), 200);
+}
+function hideLoginScreen() { document.getElementById('login-screen').classList.remove('open'); }
+function toggleUrlField() {
+  const g = document.getElementById('login-url-group');
+  g.style.display = g.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('login-baseurl').value = LS.get('api_url','https://tasks.point2this.com');
+}
+function applyAuthUser() {
+  const user = getAuthUser(); if (!user) return;
+  const display = user.displayName || user.username || '';
+  const hdrUser = document.getElementById('hdr-user');
+  if (hdrUser) hdrUser.textContent = display;
+  const adminDisp = document.getElementById('admin-user-display');
+  const adminRole = document.getElementById('admin-role-display');
+  if (adminDisp) adminDisp.textContent = display;
+  if (adminRole) adminRole.textContent = user.role ? 'Role: ' + user.role : 'Technician';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const pw = document.getElementById('login-password');
+  const un = document.getElementById('login-username');
+  if (pw) pw.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  if (un) un.addEventListener('keydown', e => { if(e.key==='Enter') pw.focus(); });
+});
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const baseurl  = document.getElementById('login-baseurl').value.trim() || 'https://tasks.point2this.com';
+  const noteEl   = document.getElementById('login-note');
+  const btn      = document.getElementById('btn-login');
+  if (!username) { noteEl.innerHTML='<span style="color:var(--danger)">Username is required.</span>'; return; }
+  if (!password) { noteEl.innerHTML='<span style="color:var(--danger)">Password is required.</span>'; return; }
+  btn.textContent='Signing in...'; btn.disabled=true;
+  noteEl.innerHTML='Connecting to server...';
+  try {
+    LS.set('api_url', baseurl);
+    const res = await fetch(baseurl+'/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})
     });
-    localStorage.setItem('svc_prefs', JSON.stringify(prefs));
-  }
-
-  function restoreSelections() {
-    try {
-      const prefs = JSON.parse(localStorage.getItem('svc_prefs') || '{}');
-      PERSIST_FIELDS.forEach(id => {
-        if (prefs[id]) document.getElementById(id).value = prefs[id];
-      });
-    } catch(e) {}
-  }
-
-  // ── Live clock ─────────────────────────────────────────────────────────────
-  function tickClock() {
-    document.getElementById('live-clock').textContent = fmtDateTime(new Date());
-  }
-  tickClock();
-  setInterval(tickClock, 1000);
-
-  // ── Status labels ──────────────────────────────────────────────────────────
-  const STATUS_LABELS = {
-    'no-activity':   'No Activity',
-    'activity-lt25': 'Activity <25%',
-    'activity-lt50': 'Activity <50%',
-    'activity-gt50': 'Activity >50%'
-  };
-
-  const MATERIAL_LABELS = {
-    'none':     'None',
-    'contrac':  'Contrac | Bromadiolone 0.005% | PCP# 22239',
-    'final':    'Final | Brodifacoum 0.005% | PCP# 25423',
-    'flatline': 'Flatline | Chlorophacinone 0.005% | PCP# 34219'
-  };
-
-  // ── Storage ────────────────────────────────────────────────────────────────
-  function loadReports() {
-    try { return JSON.parse(localStorage.getItem('svc_reports') || '[]'); }
-    catch { return []; }
-  }
-  function saveReports(list) {
-    localStorage.setItem('svc_reports', JSON.stringify(list));
-  }
-
-  // ── Tab switching ──────────────────────────────────────────────────────────
-  function switchTab(name, e) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    e.target.classList.add('active');
-    if (name === 'batch') renderBatch();
-  }
-
-  // ── Format date/time ───────────────────────────────────────────────────────
-  function fmtDateTime(d) {
-    if (!d) return '—';
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-      + '  ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-
-  // ── Save report (capture time = NOW automatically) ─────────────────────────
-  function saveReport() {
-    const technician = document.getElementById('technician').value;
-    const serial   = document.getElementById('serial').value.trim();
-    const location = document.getElementById('location').value.trim();
-    const status   = document.getElementById('status').value;
-    const material = document.getElementById('material').value;
-    const comments = document.getElementById('comments').value.trim();
-
-    if (!technician){ alert('Please select a technician.'); return; }
-    if (!serial)    { alert('Serial number is required.'); return; }
-    if (!location)  { alert('Location is required.');      return; }
-    if (!status)    { alert('Please select a status.');    return; }
-    if (!material)  { alert('Please select a material.');  return; }
-
-    const report = {
-      id:          Date.now(),
-      technician,
-      serial,
-      location,
-      status,
-      material,
-      comments,
-      captureTime: new Date().toISOString(),   // auto-stamped at save
-      savedAt:     new Date().toISOString()
+    if (res.status===401) { noteEl.innerHTML='<span style="color:var(--danger)">Invalid username or password.</span>'; return; }
+    if (!res.ok)          { noteEl.innerHTML=`<span style="color:var(--danger)">Server error (${res.status}).</span>`; return; }
+    const data  = await res.json();
+    const token = data.token||data.accessToken||data.jwt||data.Token;
+    if (!token) throw new Error('No token in response');
+    const payload = parseJwt(token);
+    const user = {
+      username,
+      displayName: payload?.name||payload?.unique_name||payload?.given_name||username,
+      userId:      payload?.sub||payload?.nameid||payload?.userId||'',
+      role:        payload?.role||payload?.Role||''
     };
+    LS.set('auth_token', token);
+    LS.set('auth_user',  user);
+    hideLoginScreen(); applyAuthUser();
+    showToast('✓ Signed in as '+user.displayName);
+    await syncAll(false);
+  } catch(e) {
+    noteEl.innerHTML=`<span style="color:var(--danger)">Login failed: ${escHtml(e.message)}</span>`;
+  } finally { btn.textContent='Sign In'; btn.disabled=false; }
+}
+function doLogout() {
+  if (!confirm('Sign out? Unsaved batch reports stay on this device.')) return;
+  LS.del('auth_token'); LS.del('auth_user');
+  showLoginScreen(); showToast('Signed out','warn');
+}
 
-    const list = loadReports();
-    list.push(report);
-    saveReports(list);
-    saveSelections();
-    updateBadge(list.length);
-    showToast('✓ Report saved to batch');
-    clearForm();
+// ══════════════════════════════════════════════════════════════
+// API HELPERS — Bearer + optional API key
+// ══════════════════════════════════════════════════════════════
+async function apiCall(method, path, body=null) {
+  const cfg   = getApiConfig();
+  const token = getToken();
+  const headers = {'Content-Type':'application/json'};
+  if (cfg.key) headers['X-API-Key']     = cfg.key;
+  if (token)   headers['Authorization'] = 'Bearer '+token;
+  const opts = {method, headers};
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(cfg.url+path, opts);
+  if (res.status===401) { showLoginScreen(); throw new Error('Session expired — please sign in again'); }
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SYNC — Fetch facilities + devices from API, cache locally
+// ══════════════════════════════════════════════════════════════
+let isOnline = navigator.onLine;
+
+window.addEventListener('online',  () => { isOnline=true;  updateOnlineDot(); syncAll(false); });
+window.addEventListener('offline', () => { isOnline=false; updateOnlineDot(); });
+
+function updateOnlineDot() {
+  const dot = document.getElementById('online-dot');
+  if (isOnline) { dot.classList.remove('offline'); dot.title='Online'; }
+  else           { dot.classList.add('offline');    dot.title='Offline — using cached data'; }
+}
+
+async function syncAll(showFeedback=true) {
+  if (!isOnline) { if(showFeedback) showToast('⚠ Offline — using cached data','warn'); return; }
+  if (showFeedback) showToast('⏳ Syncing...');
+  try {
+    // GET /facilities
+    const facData = await apiCall('GET', '/api/facilities');
+    saveFacilitiesCache(Array.isArray(facData) ? facData : facData.data || []);
+
+    // GET /devices
+    const devData = await apiCall('GET', '/api/devices');
+    saveDevicesCache(Array.isArray(devData) ? devData : devData.data || []);
+
+    LS.set('last_sync', new Date().toISOString());
+    if (showFeedback) showToast('✓ Synced successfully');
+    refreshFacilityDropdown();
+    renderAdminFacilities();
+    renderAdminDevices();
+    updateLastSyncDisplay();
+  } catch(e) {
+    console.warn('Sync failed:', e.message);
+    if (showFeedback) showToast('⚠ Sync failed — using cache', 'warn');
+  }
+}
+
+function updateLastSyncDisplay() {
+  const ls = LS.get('last_sync');
+  const el = document.getElementById('last-sync-display');
+  if (el) el.textContent = ls ? fmtDateTime(new Date(ls)) : 'Never';
+}
+
+// ══════════════════════════════════════════════════════════════
+// FACILITY → DEVICE CHAIN
+// ══════════════════════════════════════════════════════════════
+function refreshFacilityDropdown() {
+  const facs = loadFacilities();
+  const sel  = document.getElementById('facility');
+  const cur  = sel.value;
+  sel.innerHTML = '<option value="">— Select Facility —</option>';
+  facs.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.id; o.textContent = f.name;
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+
+  // Also populate device modal facility select + admin filter
+  ['device-facility','admin-facility-filter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.innerHTML = id==='admin-facility-filter'
+      ? '<option value="">— All Facilities —</option>'
+      : '<option value="">— Select Facility —</option>';
+    facs.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.id; o.textContent = f.name;
+      el.appendChild(o);
+    });
+    if (prev) el.value = prev;
+  });
+}
+
+function onFacilityChange() {
+  const facId = document.getElementById('facility').value;
+  const devSel = document.getElementById('device');
+  const search = document.getElementById('device-search');
+
+  devSel.innerHTML = '<option value="">— Select Device —</option>';
+  devSel.disabled = !facId;
+  search.style.display = facId ? 'block' : 'none';
+  search.value = '';
+
+  if (!facId) {
+    document.getElementById('remaining-container').style.display = 'none';
+    return;
   }
 
-  // ── Clear form ─────────────────────────────────────────────────────────────
-  function clearForm() {
-    document.getElementById('serial').value   = '';
-    document.getElementById('status').value   = '';
-    document.getElementById('comments').value = '';
-    document.getElementById('serial').focus();
+  populateDeviceDropdown(facId, '');
+  updateRemainingCounter(facId);
+}
+
+function populateDeviceDropdown(facId, filter='') {
+  const devices = loadDevices().filter(d => String(d.facilityId||d.facility_id) === String(facId));
+  const devSel  = document.getElementById('device');
+  const cur     = devSel.value;
+  devSel.innerHTML = '<option value="">— Select Device —</option>';
+  const lc = filter.toLowerCase();
+  devices
+    .filter(d => !lc || (d.deviceNumber||d.device_number||'').toLowerCase().includes(lc) || (d.location||'').toLowerCase().includes(lc))
+    .forEach(d => {
+      const num  = d.deviceNumber || d.device_number || d.id;
+      const loc  = d.location || '';
+      const o    = document.createElement('option');
+      o.value    = d.id;
+      o.dataset.num = num;
+      o.dataset.loc = loc;
+      o.textContent = `${num} — ${loc}`;
+      devSel.appendChild(o);
+    });
+  if (cur) devSel.value = cur;
+}
+
+function filterDevices() {
+  const facId = document.getElementById('facility').value;
+  const q     = document.getElementById('device-search').value;
+  if (facId) populateDeviceDropdown(facId, q);
+}
+
+function onDeviceChange() {
+  // Auto-update remaining after selecting a device
+  const facId = document.getElementById('facility').value;
+  if (facId) updateRemainingCounter(facId);
+}
+
+// ══════════════════════════════════════════════════════════════
+// REMAINING COUNTER
+// ══════════════════════════════════════════════════════════════
+function updateRemainingCounter(facId) {
+  const container = document.getElementById('remaining-container');
+  const remCount  = document.getElementById('rem-count');
+  const remFill   = document.getElementById('rem-fill');
+
+  const allDevices = loadDevices().filter(d => String(d.facilityId||d.facility_id) === String(facId));
+  if (!allDevices.length) { container.style.display='none'; return; }
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - RECENT_DAYS);
+
+  const reports = loadReports();
+  const servicedIds = new Set(
+    reports
+      .filter(r => r.facilityId===facId && new Date(r.captureTime) >= cutoff)
+      .map(r => r.deviceId)
+  );
+
+  const total     = allDevices.length;
+  const serviced  = allDevices.filter(d => servicedIds.has(String(d.id))).length;
+  const remaining = total - serviced;
+  const pct       = total ? (serviced/total)*100 : 0;
+
+  container.style.display = 'block';
+  remCount.textContent    = remaining;
+  remCount.className      = 'rem-count' + (remaining===0 ? ' all-done' : '');
+  remFill.style.width     = pct+'%';
+  remFill.className       = 'remaining-progress-fill' + (remaining===0 ? ' done' : '');
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE CLOCK
+// ══════════════════════════════════════════════════════════════
+function tickClock() { document.getElementById('live-clock').textContent = fmtDateTime(new Date()); }
+tickClock(); setInterval(tickClock,1000);
+
+// ══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════
+function switchTab(name, e) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (e) e.target.classList.add('active');
+  else document.querySelectorAll('.tab')[['form','batch','admin'].indexOf(name)].classList.add('active');
+  if (name==='batch')  renderBatch();
+  if (name==='admin')  renderAdmin();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE REPORT
+// ══════════════════════════════════════════════════════════════
+const PERSIST_KEYS = ['facility','material'];
+
+function saveSelections() {
+  const p={};
+  PERSIST_KEYS.forEach(id => { p[id]=document.getElementById(id).value; });
+  LS.set('svc_prefs',p);
+}
+function restoreSelections() {
+  const p = LS.get('svc_prefs',{});
+  PERSIST_KEYS.forEach(id => { if(p[id]) document.getElementById(id).value=p[id]; });
+  if (p.facility) { onFacilityChange(); }
+}
+
+function saveReport() {
+  const user   = getAuthUser();
+  if (!user)   { showLoginScreen(); return; }
+  const technician = user.displayName || user.username || 'Unknown';
+  const userId     = user.userId || '';
+  const facId      = document.getElementById('facility').value;
+  const devSel     = document.getElementById('device');
+  const devId      = devSel.value;
+  const status     = document.getElementById('status').value;
+  const material   = document.getElementById('material').value;
+  const comments   = document.getElementById('comments').value.trim();
+
+  if (!facId)    { alert('Please select a facility.');      return; }
+  if (!devId)    { alert('Please select a device.');        return; }
+  if (!status)   { alert('Please select a status.');        return; }
+  if (!material) { alert('Please select a material used.'); return; }
+
+  const selOpt = devSel.options[devSel.selectedIndex];
+  const devNum = selOpt?.dataset?.num || devId;
+  const devLoc = selOpt?.dataset?.loc || '';
+  const facs   = loadFacilities();
+  const fac    = facs.find(f=>String(f.id)===String(facId));
+
+  const report = {
+    id:             Date.now(),
+    technician,
+    userId,
+    facilityId:     facId,
+    facilityName:   fac?.name || facId,
+    deviceId:       devId,
+    deviceNumber:   devNum,
+    deviceLocation: devLoc,
+    status,
+    material,
+    comments,
+    captureTime:    new Date().toISOString(),
+    savedAt:        new Date().toISOString()
+  };
+
+  const list = loadReports();
+  list.push(report);
+  saveReports(list);
+  saveSelections();
+  updateBadge(list.length);
+  updateRemainingCounter(facId);
+  showToast('✓ Report saved to batch');
+  clearForm();
+}
+
+function clearForm() {
+  document.getElementById('device').value   = '';
+  document.getElementById('status').value   = '';
+  document.getElementById('comments').value = '';
+  document.getElementById('device-search').value = '';
+  const facId = document.getElementById('facility').value;
+  if (facId) populateDeviceDropdown(facId,'');
+  document.getElementById('device-search').focus();
+}
+
+// ══════════════════════════════════════════════════════════════
+// BATCH RENDER
+// ══════════════════════════════════════════════════════════════
+function renderBatch() {
+  const list = loadReports();
+  document.querySelector('#batch-count span').textContent = list.length;
+  const container = document.getElementById('batch-list');
+  if (!list.length) {
+    container.innerHTML='<div class="empty-state"><div class="icon">📋</div>No reports yet.</div>';
+    return;
   }
+  container.innerHTML = list.slice().reverse().map(r => `
+    <div class="report-card">
+      <button class="btn-delete" onclick="deleteReport(${r.id})">✕</button>
+      <div class="card-device">${escHtml(r.deviceNumber)} — ${escHtml(r.deviceLocation)}</div>
+      <div class="card-facility">🏢 ${escHtml(r.facilityName||r.facilityId)}  &nbsp;👤 ${escHtml(r.technician)}</div>
+      <span class="pill ${STATUS_PILL[r.status]||'pill-no-activity'}">${STATUS_LABELS[r.status]||r.status}</span>
+      <span class="pill pill-material">${(MATERIAL_LABELS[r.material]||r.material||'').split('|')[0].trim()}</span>
+      <div class="card-meta">CAPTURED: ${fmtDateTime(new Date(r.captureTime))}</div>
+      ${r.comments?`<div class="card-comment">${escHtml(r.comments)}</div>`:''}
+    </div>`).join('');
+}
 
-  // ── Render batch list ──────────────────────────────────────────────────────
-  function renderBatch() {
-    const list = loadReports();
-    document.querySelector('#batch-count span').textContent = list.length;
-    const container = document.getElementById('batch-list');
+function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  const list = loadReports().filter(r=>r.id!==id);
+  saveReports(list);
+  updateBadge(list.length);
+  renderBatch();
+}
 
-    if (list.length === 0) {
-      container.innerHTML = `<div class="empty-state"><div class="icon">📋</div>No reports yet.<br>Save a report from the form.</div>`;
+function clearAll() {
+  if (!confirm('Clear ALL saved reports? This cannot be undone.')) return;
+  LS.del('svc_reports');
+  updateBadge(0);
+  renderBatch();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════════════════════════
+function renderAdmin() {
+  const cfg = getApiConfig();
+  document.getElementById('admin-baseurl').value = cfg.url;
+  document.getElementById('admin-apikey').value  = cfg.key;
+  updateLastSyncDisplay();
+  refreshFacilityDropdown();
+  renderAdminFacilities();
+  renderAdminDevices();
+}
+
+function renderAdminFacilities() {
+  const facs = loadFacilities();
+  const el   = document.getElementById('admin-facility-list');
+  if (!facs.length) { el.innerHTML='<div class="empty-state" style="padding:16px"><div>No facilities. Add one or sync.</div></div>'; return; }
+  el.innerHTML = facs.map(f=>`
+    <div class="admin-item">
+      <div><div class="admin-item-label">${escHtml(f.name)}</div><div class="admin-item-sub">${escHtml(f.address||'')}</div></div>
+      <div class="admin-item-actions">
+        <button class="btn-admin edit" onclick="openFacilityModal(${f.id})">Edit</button>
+        <button class="btn-admin del"  onclick="deleteFacility(${f.id})">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminDevices() {
+  const filterFac = document.getElementById('admin-facility-filter')?.value;
+  let devs = loadDevices();
+  if (filterFac) devs = devs.filter(d=>String(d.facilityId||d.facility_id)===String(filterFac));
+  const facs = loadFacilities();
+  const facMap = Object.fromEntries(facs.map(f=>[String(f.id),f.name]));
+  const el = document.getElementById('admin-device-list');
+  if (!devs.length) { el.innerHTML='<div class="empty-state" style="padding:16px"><div>No service items.</div></div>'; return; }
+  el.innerHTML = devs.map(d=>{
+    const fid = String(d.facilityId||d.facility_id||'');
+    const num = d.deviceNumber||d.device_number||d.id;
+    const loc = d.location||'';
+    return `
+    <div class="admin-item">
+      <div>
+        <div class="admin-item-label">${escHtml(num)} — ${escHtml(loc)}</div>
+        <div class="admin-item-sub">${escHtml(facMap[fid]||fid)}${d.type?` · ${escHtml(d.type)}`:''}</div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn-admin edit" onclick="openDeviceModal(${d.id})">Edit</button>
+        <button class="btn-admin del"  onclick="deleteDevice(${d.id})">Del</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// API config
+async function testConnection() {
+  const key = document.getElementById('admin-apikey').value.trim();
+  const url = document.getElementById('admin-baseurl').value.trim();
+  const disp = document.getElementById('conn-status-display');
+  disp.innerHTML = '<span class="conn-status checking">Testing...</span>';
+  try {
+    const res = await fetch(url+'/api/health', { headers:{'X-API-Key':key} });
+    if (res.ok) disp.innerHTML='<span class="conn-status ok">✓ Connected</span>';
+    else        disp.innerHTML='<span class="conn-status fail">✕ '+res.status+' '+res.statusText+'</span>';
+  } catch(e) {
+    disp.innerHTML='<span class="conn-status fail">✕ '+escHtml(e.message)+'</span>';
+  }
+}
+
+function saveApiConfig() {
+  const key = document.getElementById('admin-apikey').value.trim();
+  const url = document.getElementById('admin-baseurl').value.trim();
+  LS.set('api_key', key);
+  LS.set('api_url', url || 'https://tasks.point2this.com');
+  showToast('✓ API config saved');
+}
+
+// Facility CRUD
+function openFacilityModal(id) {
+  document.getElementById('facility-modal-title').textContent = id ? 'Edit Facility' : 'Add Facility';
+  document.getElementById('facility-edit-id').value = id || '';
+  if (id) {
+    const f = loadFacilities().find(x=>String(x.id)===String(id));
+    document.getElementById('facility-name').value    = f?.name||'';
+    document.getElementById('facility-address').value = f?.address||'';
+  } else {
+    document.getElementById('facility-name').value    = '';
+    document.getElementById('facility-address').value = '';
+  }
+  document.getElementById('facility-modal').classList.add('open');
+}
+
+async function saveFacility() {
+  const id   = document.getElementById('facility-edit-id').value;
+  const name = document.getElementById('facility-name').value.trim();
+  const addr = document.getElementById('facility-address').value.trim();
+  if (!name) { alert('Facility name is required.'); return; }
+  try {
+    if (id) {
+      await apiCall('PUT', '/api/facilities/'+id, {name,address:addr});
+    } else {
+      await apiCall('POST', '/api/facilities', {name,address:addr});
+    }
+    await syncAll(false);
+    closeModal('facility-modal');
+    showToast('✓ Facility saved');
+  } catch(e) {
+    // Offline — save to local cache with temp id
+    const facs = loadFacilities();
+    if (id) {
+      const i = facs.findIndex(x=>String(x.id)===String(id));
+      if (i>=0) { facs[i].name=name; facs[i].address=addr; }
+    } else {
+      facs.push({id:'local_'+Date.now(), name, address:addr, _pending:true});
+    }
+    saveFacilitiesCache(facs);
+    refreshFacilityDropdown();
+    renderAdminFacilities();
+    closeModal('facility-modal');
+    showToast('⚠ Saved locally — sync when online','warn');
+  }
+}
+
+async function deleteFacility(id) {
+  if (!confirm('Delete this facility and all its service items?')) return;
+  try {
+    await apiCall('DELETE', '/api/facilities/'+id);
+    await syncAll(false);
+    showToast('✓ Facility deleted');
+  } catch(e) {
+    const facs = loadFacilities().filter(f=>String(f.id)!==String(id));
+    saveFacilitiesCache(facs);
+    const devs = loadDevices().filter(d=>String(d.facilityId||d.facility_id)!==String(id));
+    saveDevicesCache(devs);
+    refreshFacilityDropdown();
+    renderAdminFacilities();
+    renderAdminDevices();
+    showToast('⚠ Deleted locally — sync when online','warn');
+  }
+}
+
+// Device CRUD
+function openDeviceModal(id) {
+  document.getElementById('device-modal-title').textContent = id ? 'Edit Service Item' : 'Add Service Item';
+  document.getElementById('device-edit-id').value = id || '';
+  refreshFacilityDropdown();
+  if (id) {
+    const d = loadDevices().find(x=>String(x.id)===String(id));
+    document.getElementById('device-facility').value = String(d?.facilityId||d?.facility_id||'');
+    document.getElementById('device-number').value   = d?.deviceNumber||d?.device_number||'';
+    document.getElementById('device-location').value = d?.location||'';
+    document.getElementById('device-type').value     = d?.type||'';
+  } else {
+    document.getElementById('device-facility').value = document.getElementById('admin-facility-filter').value || '';
+    document.getElementById('device-number').value   = '';
+    document.getElementById('device-location').value = '';
+    document.getElementById('device-type').value     = '';
+  }
+  document.getElementById('device-modal').classList.add('open');
+}
+
+async function saveDevice() {
+  const id    = document.getElementById('device-edit-id').value;
+  const facId = document.getElementById('device-facility').value;
+  const num   = document.getElementById('device-number').value.trim();
+  const loc   = document.getElementById('device-location').value.trim();
+  const type  = document.getElementById('device-type').value.trim();
+  if (!facId) { alert('Please select a facility.'); return; }
+  if (!num)   { alert('Device number is required.'); return; }
+  if (!loc)   { alert('Location is required.'); return; }
+  const payload = { facilityId:facId, deviceNumber:num, location:loc, type };
+  try {
+    if (id) await apiCall('PUT',  '/api/devices/'+id, payload);
+    else    await apiCall('POST', '/api/devices',      payload);
+    await syncAll(false);
+    closeModal('device-modal');
+    showToast('✓ Service item saved');
+  } catch(e) {
+    const devs = loadDevices();
+    if (id) {
+      const i = devs.findIndex(x=>String(x.id)===String(id));
+      if (i>=0) Object.assign(devs[i], {deviceNumber:num, location:loc, type, facilityId:facId});
+    } else {
+      devs.push({id:'local_'+Date.now(), facilityId:facId, deviceNumber:num, location:loc, type, _pending:true});
+    }
+    saveDevicesCache(devs);
+    refreshFacilityDropdown();
+    renderAdminDevices();
+    closeModal('device-modal');
+    showToast('⚠ Saved locally — sync when online','warn');
+  }
+}
+
+async function deleteDevice(id) {
+  if (!confirm('Delete this service item?')) return;
+  try {
+    await apiCall('DELETE', '/api/devices/'+id);
+    await syncAll(false);
+    showToast('✓ Service item deleted');
+  } catch(e) {
+    const devs = loadDevices().filter(d=>String(d.id)!==String(id));
+    saveDevicesCache(devs);
+    renderAdminDevices();
+    showToast('⚠ Deleted locally — sync when online','warn');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCANNER
+// ══════════════════════════════════════════════════════════════
+let codeReader=null, scannerActive=false;
+
+async function openScanner() {
+  document.getElementById('scan-overlay').classList.add('open');
+  document.getElementById('scan-status').textContent='Starting camera...';
+  try {
+    const ZXing = window.ZXingLibrary || window.ZXing;
+    if (ZXing?.BrowserMultiFormatReader) { await startZXing(ZXing); }
+    else if ('BarcodeDetector' in window) { await startBarcodeDetector(); }
+    else { await startRawCamera(); }
+  } catch(e) {
+    document.getElementById('scan-status').textContent='⚠ '+e.message;
+  }
+}
+
+async function startZXing(ZXing) {
+  codeReader=new ZXing.BrowserMultiFormatReader();
+  scannerActive=true;
+  document.getElementById('scan-status').textContent='Point camera at barcode or QR code';
+  await codeReader.decodeFromConstraints(
+    {video:{facingMode:'environment'}}, 'scan-video',
+    (result,err) => { if(result&&scannerActive) onScanSuccess(result.getText()); }
+  );
+}
+
+async function startBarcodeDetector() {
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  const video=document.getElementById('scan-video');
+  video.srcObject=stream; await video.play();
+  const det=new BarcodeDetector();
+  scannerActive=true;
+  document.getElementById('scan-status').textContent='Point camera at barcode or QR code';
+  const tick=async()=>{ if(!scannerActive)return; try{const c=await det.detect(video);if(c.length){onScanSuccess(c[0].rawValue);return;}}catch(e){} requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
+async function startRawCamera() {
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  const video=document.getElementById('scan-video');
+  video.srcObject=stream; await video.play(); scannerActive=true;
+  document.getElementById('scan-status').textContent='Camera active — type serial manually or close';
+}
+
+function onScanSuccess(value) {
+  scannerActive=false;
+  // Try to match scanned value to a device number in the selected facility
+  const facId = document.getElementById('facility').value;
+  if (facId) {
+    const devs = loadDevices().filter(d=>String(d.facilityId||d.facility_id)===String(facId));
+    const match = devs.find(d=>(d.deviceNumber||d.device_number||'').toLowerCase()===value.toLowerCase());
+    if (match) {
+      document.getElementById('device').value = match.id;
+      showToast('✓ Device matched: '+value);
+      setTimeout(()=>closeScanner(),500);
       return;
     }
-
-    container.innerHTML = list.slice().reverse().map(r => {
-      const cap = r.captureTime ? new Date(r.captureTime) : null;
-      return `
-        <div class="report-card">
-          <button class="btn-delete" onclick="deleteReport(${r.id})" title="Delete">✕</button>
-          <div class="card-serial"># ${escHtml(r.serial)}</div>
-          <div class="card-location">📍 ${escHtml(r.location)}${r.technician ? '  &nbsp;👤 ' + escHtml(r.technician) : ''}</div>
-          <span class="status-pill pill-${r.status}">${STATUS_LABELS[r.status] || r.status}</span>
-          ${r.material ? `<span class="status-pill pill-material">${MATERIAL_LABELS[r.material] || r.material}</span>` : ''}
-          <div class="card-meta">
-            CAPTURED: ${cap ? fmtDateTime(cap) : '—'}
-          </div>
-          ${r.comments ? `<div class="card-comment">${escHtml(r.comments)}</div>` : ''}
-        </div>`;
-    }).join('');
   }
+  // No match — show toast with scanned value
+  showToast('⚠ No device match for: '+value,'warn');
+  document.getElementById('scan-status').textContent='No match for '+value+' — select manually';
+  setTimeout(()=>closeScanner(),1500);
+}
 
-  function deleteReport(id) {
-    if (!confirm('Delete this report?')) return;
-    const list = loadReports().filter(r => r.id !== id);
-    saveReports(list);
-    updateBadge(list.length);
-    renderBatch();
+function closeScanner() {
+  scannerActive=false;
+  document.getElementById('scan-overlay').classList.remove('open');
+  if(codeReader){try{codeReader.reset();}catch(e){}codeReader=null;}
+  const video=document.getElementById('scan-video');
+  if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+}
+
+// ══════════════════════════════════════════════════════════════
+// CSV BUILD
+// ══════════════════════════════════════════════════════════════
+function buildCSV() {
+  const list = loadReports();
+  const headers = ['Technician','Facility','Device #','Device Location','Status','Material Used','Capture Time','Comments'];
+  const rows = list.map(r=>[
+    r.technician||'',
+    r.facilityName||r.facilityId||'',
+    r.deviceNumber||r.deviceId||'',
+    r.deviceLocation||'',
+    STATUS_LABELS[r.status]||r.status,
+    MATERIAL_LABELS[r.material]||r.material||'',
+    r.captureTime?fmtDateTime(new Date(r.captureTime)):'',
+    r.comments||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  return [headers.join(','),...rows].join('\r\n');
+}
+
+function downloadCSV(csv,filename) {
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV() {
+  const list=loadReports();
+  if(!list.length){alert('No reports to export.');return;}
+  downloadCSV(buildCSV(),'service_reports_'+new Date().toISOString().slice(0,10)+'.csv');
+  showToast('✓ CSV downloaded');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PDF GENERATION
+// ══════════════════════════════════════════════════════════════
+function exportPDF(location, returnBase64=false) {
+  const list=loadReports();
+  if(!list.length&&!returnBase64){alert('No reports to export.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  const ORANGE=[233,98,26],DARK=[26,26,46],WHITE=[255,255,255],LGREY=[245,245,245],MGREY=[200,200,200],TEXTCOL=[40,40,40];
+  const PW=215.9,PH=279.4,ML=14,MR=14,CW=PW-ML-MR;
+  const sorted=list.slice().sort((a,b)=>new Date(a.captureTime)-new Date(b.captureTime));
+  const first=sorted.length?new Date(sorted[0].captureTime):new Date();
+  const last=sorted.length?new Date(sorted[sorted.length-1].captureTime):new Date();
+
+  // Totals
+  const byStatus={},byMaterial={};
+  list.forEach(r=>{
+    const s=STATUS_LABELS[r.status]||r.status;
+    const m=(MATERIAL_LABELS[r.material]||r.material||'None').split('|')[0].trim();
+    byStatus[s]=(byStatus[s]||0)+1;
+    byMaterial[m]=(byMaterial[m]||0)+1;
+  });
+
+  // Group by facility
+  const facGroups={};
+  list.forEach(r=>{const fn=r.facilityName||r.facilityId||'Unknown';facGroups[fn]=(facGroups[fn]||0)+1;});
+
+  let y=0;
+  // Header
+  doc.setFillColor(...DARK); doc.rect(0,0,PW,28,'F');
+  doc.setFillColor(...ORANGE); doc.rect(0,28,PW,2,'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica','bold'); doc.setFontSize(18);
+  doc.text('Windsor Pest Control, Inc.',ML,12);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Service Report',ML,20);
+  doc.text('CONFIDENTIAL',PW-MR,20,{align:'right'});
+  y=38;
+
+  // Info box
+  const infoH=location?54:40;
+  doc.setFillColor(...LGREY); doc.roundedRect(ML,y,CW,infoH,2,2,'F');
+  doc.setDrawColor(...MGREY); doc.roundedRect(ML,y,CW,infoH,2,2,'S');
+  const col1=ML+4, col2=ML+CW/2;
+  doc.setTextColor(...DARK); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('TECHNICIAN',col1,y+7); doc.text('REPORT DATE',col2,y+7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  const techs=[...new Set(list.map(r=>r.technician||'Unknown'))].join(', ');
+  doc.text(techs,col1,y+15);
+  doc.text(new Date().toLocaleDateString([],{weekday:'long',year:'numeric',month:'long',day:'numeric'}),col2,y+15);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('SERVICE START',col1,y+23); doc.text('SERVICE END',col2,y+23);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text(fmtDateTime(first),col1,y+31); doc.text(fmtDateTime(last),col2,y+31);
+  if (location) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text('SERVICE LOCATION',col1,y+40);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(`${location.name}  —  ${location.address}`,col1,y+48);
   }
+  y+=infoH+8;
 
-  function clearAll() {
-    if (!confirm('Clear ALL saved reports? This cannot be undone.')) return;
-    localStorage.removeItem('svc_reports');
-    updateBadge(0);
-    renderBatch();
-  }
+  // Summary header
+  doc.setFillColor(...ORANGE); doc.rect(ML,y,CW,7,'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('SUMMARY',ML+3,y+5); y+=10;
 
-  // ── Build CSV string ───────────────────────────────────────────────────────
-  function buildCSV() {
-    const list = loadReports();
-    const headers = ['Technician','Serial Number','Location','Status','Material Used','Capture Time','Comments'];
-    const rows = list.map(r => [
-      r.technician || '',
-      r.serial,
-      r.location,
-      STATUS_LABELS[r.status] || r.status,
-      MATERIAL_LABELS[r.material] || r.material || '',
-      r.captureTime ? fmtDateTime(new Date(r.captureTime)) : '',
-      r.comments
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
-    return [headers.join(','), ...rows].join('\r\n');
-  }
+  // Totals row
+  doc.setFillColor(...DARK); doc.roundedRect(ML,y,CW,12,2,2,'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text(`Total Stations Inspected: ${list.length}`,ML+4,y+8);
+  y+=16;
 
-  // ── Download CSV file ──────────────────────────────────────────────────────
-  function downloadCSV(csv, filename) {
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  // Status + Material side by side
+  const halfW=(CW-4)/2;
+  const statusEntries=Object.entries(byStatus);
+  const matEntries=Object.entries(byMaterial);
+  const statusBoxH=6+statusEntries.length*7+4;
+  const matBoxH=6+matEntries.length*18+4;
 
-  function exportCSV() {
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to export.'); return; }
-    downloadCSV(buildCSV(), 'service_reports_' + new Date().toISOString().slice(0,10) + '.csv');
-    showToast('✓ CSV downloaded');
-  }
+  doc.setFillColor(...LGREY); doc.roundedRect(ML,y,halfW,statusBoxH,2,2,'F');
+  doc.setDrawColor(...MGREY); doc.roundedRect(ML,y,halfW,statusBoxH,2,2,'S');
+  doc.setTextColor(...ORANGE); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('ACTIVITY STATUS',ML+3,y+5);
+  let sy=y+12;
+  statusEntries.forEach(([lbl,cnt])=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...TEXTCOL);
+    doc.text(lbl,ML+3,sy);
+    doc.setFont('helvetica','bold'); doc.text(String(cnt),ML+halfW-6,sy,{align:'right'});
+    sy+=7;
+  });
 
-  // ── Export PDF Report ──────────────────────────────────────────────────────
-  function exportPDF(location, returnBase64 = false) {
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to export.'); return; }
+  const mx=ML+halfW+4;
+  doc.setFillColor(...LGREY); doc.roundedRect(mx,y,halfW,matBoxH,2,2,'F');
+  doc.setDrawColor(...MGREY); doc.roundedRect(mx,y,halfW,matBoxH,2,2,'S');
+  doc.setTextColor(...ORANGE); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('MATERIAL USED',mx+3,y+5);
+  let my=y+12;
+  matEntries.forEach(([lbl,cnt])=>{
+    const parts=(MATERIAL_LABELS[Object.keys(MATERIAL_LABELS).find(k=>MATERIAL_LABELS[k].split('|')[0].trim()===lbl)]||lbl).split('|').map(s=>s.trim());
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...TEXTCOL);
+    doc.text(parts[0],mx+3,my); doc.text(String(cnt),mx+halfW-4,my,{align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,100,100);
+    if(parts[1]) doc.text(parts[1],mx+3,my+5);
+    if(parts[2]) doc.text(parts[2],mx+3,my+10);
+    my+=18;
+  });
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  y+=Math.max(statusBoxH,matBoxH)+8;
 
-    const ORANGE  = [233, 98, 26];
-    const DARK    = [26, 26, 46];
-    const WHITE   = [255, 255, 255];
-    const LGREY   = [245, 245, 245];
-    const MGREY   = [200, 200, 200];
-    const TEXTCOL = [40, 40, 40];
+  // Detail table
+  doc.setFillColor(...ORANGE); doc.rect(ML,y,CW,7,'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('INSPECTION DETAIL',ML+3,y+5); y+=10;
 
-    const PW = 215.9; // portrait letter width mm
-    const PH = 279.4; // portrait letter height mm
-    const ML = 14;
-    const MR = 14;
-    const CW = PW - ML - MR;
-
-    // ── Sort by capture time ──
-    const sorted = list.slice().sort((a, b) =>
-      new Date(a.captureTime) - new Date(b.captureTime));
-    const first = new Date(sorted[0].captureTime);
-    const last  = new Date(sorted[sorted.length - 1].captureTime);
-
-    // ── Totals ──
-    const totalStations = list.length;
-    const byStatus = {};
-    const byMaterial = {};
-    list.forEach(r => {
-      const s = STATUS_LABELS[r.status] || r.status;
-      const m = MATERIAL_LABELS[r.material] || r.material || 'None';
-      byStatus[s]   = (byStatus[s]   || 0) + 1;
-      byMaterial[m] = (byMaterial[m] || 0) + 1;
-    });
-
-    let y = 0;
-
-    // ── HEADER BAR ──
-    doc.setFillColor(...DARK);
-    doc.rect(0, 0, PW, 28, 'F');
-
-    doc.setFillColor(...ORANGE);
-    doc.rect(0, 28, PW, 2, 'F');
-
-    doc.setTextColor(...WHITE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('Windsor Pest Control, Inc.', ML, 12);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Service Report', ML, 20);
-    doc.text('CONFIDENTIAL — FOR INTERNAL USE ONLY', PW - MR, 20, { align: 'right' });
-
-    y = 38;
-
-    // ── REPORT INFO BOX ──
-    const infoBoxH = location ? 48 : 28;
-    doc.setFillColor(...LGREY);
-    doc.roundedRect(ML, y, CW, infoBoxH, 2, 2, 'F');
-    doc.setDrawColor(...MGREY);
-    doc.roundedRect(ML, y, CW, infoBoxH, 2, 2, 'S');
-
-    doc.setTextColor(...DARK);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-
-    const col1 = ML + 4;
-    const col2 = ML + CW / 2;
-
-    doc.text('TECHNICIAN', col1, y + 7);
-    doc.text('REPORT DATE', col2, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Catherine Trudell', col1, y + 14);
-    doc.text(new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), col2, y + 14);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('SERVICE START', col1, y + 21);
-    doc.text('SERVICE END', col2, y + 21);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(fmtDateTime(first), col1, y + 28);
-    doc.text(fmtDateTime(last),  col2, y + 28);
-
-    if (location) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.text('SERVICE LOCATION', col1, y + 35);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.text(`${location.name}  —  ${location.address}`, col1, y + 42);
+  doc.autoTable({
+    startY:y, margin:{left:ML,right:MR},
+    head:[['#','Facility','Device #','Location','Status','Material','Captured','Comments']],
+    body:sorted.map((r,i)=>[
+      i+1, r.facilityName||r.facilityId||'',
+      r.deviceNumber||r.deviceId||'',
+      r.deviceLocation||'',
+      STATUS_LABELS[r.status]||r.status,
+      (MATERIAL_LABELS[r.material]||r.material||'None').split('|')[0].trim(),
+      r.captureTime?fmtDateTime(new Date(r.captureTime)):'—',
+      r.comments||''
+    ]),
+    headStyles:{fillColor:DARK,textColor:WHITE,fontStyle:'bold',fontSize:7.5,cellPadding:2.5},
+    bodyStyles:{fontSize:7,cellPadding:2,textColor:TEXTCOL},
+    alternateRowStyles:{fillColor:LGREY},
+    columnStyles:{0:{cellWidth:7,halign:'center'},1:{cellWidth:24},2:{cellWidth:16},3:{cellWidth:24},4:{cellWidth:22},5:{cellWidth:18},6:{cellWidth:30},7:{cellWidth:'auto'}},
+    didDrawPage:(data)=>{
+      doc.setFillColor(...DARK); doc.rect(0,PH-10,PW,10,'F');
+      doc.setTextColor(...WHITE); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      doc.text('Windsor Pest Control, Inc.  |  Confidential Service Report',ML,PH-3.5);
+      doc.text('Page '+data.pageNumber,PW-MR,PH-3.5,{align:'right'});
     }
+  });
 
-    y += infoBoxH + 8;
+  // Completion box
+  let finalY=doc.lastAutoTable.finalY+10;
+  if(finalY>PH-40){doc.addPage();finalY=20;}
+  doc.setFillColor(...LGREY); doc.roundedRect(ML,finalY,CW,20,2,2,'F');
+  doc.setDrawColor(...MGREY); doc.roundedRect(ML,finalY,CW,20,2,2,'S');
+  doc.setTextColor(...DARK); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('TECHNICIAN',col1,finalY+7); doc.text('DATE COMPLETED',col2,finalY+7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TEXTCOL);
+  doc.text('Catherine Trudell',col1,finalY+16);
+  doc.text(new Date().toLocaleDateString([],{weekday:'long',year:'numeric',month:'long',day:'numeric'}),col2,finalY+16);
 
-    // ── SUMMARY SECTION HEADER ──
-    doc.setFillColor(...ORANGE);
-    doc.rect(ML, y, CW, 7, 'F');
-    doc.setTextColor(...WHITE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('SUMMARY', ML + 3, y + 5);
-    y += 10;
+  const locationSlug=location?'_'+location.name.replace(/\s+/g,'_').toLowerCase():'';
+  const filename='windsor_service_report'+locationSlug+'_'+new Date().toISOString().slice(0,10)+'.pdf';
 
-    // Total stations
-    doc.setFillColor(...DARK);
-    doc.roundedRect(ML, y, CW, 12, 2, 2, 'F');
-    doc.setTextColor(...WHITE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(`Total Stations Inspected: ${totalStations}`, ML + 4, y + 8);
-    y += 16;
-
-    // Status breakdown + Material breakdown side by side
-    const halfW = (CW - 4) / 2;
-
-    // Status box
-    doc.setFillColor(...LGREY);
-    doc.roundedRect(ML, y, halfW, 6 + Object.keys(byStatus).length * 7 + 4, 2, 2, 'F');
-    doc.setDrawColor(...MGREY);
-    doc.roundedRect(ML, y, halfW, 6 + Object.keys(byStatus).length * 7 + 4, 2, 2, 'S');
-    doc.setTextColor(...ORANGE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('ACTIVITY STATUS', ML + 3, y + 5);
-    doc.setTextColor(...TEXTCOL);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    let sy = y + 11;
-    Object.entries(byStatus).forEach(([label, count]) => {
-      doc.text(`${label}:`, ML + 3, sy);
-      doc.setFont('helvetica', 'bold');
-      doc.text(String(count), ML + halfW - 8, sy, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      sy += 7;
-    });
-    const statusBoxH = 6 + Object.keys(byStatus).length * 7 + 4;
-
-    // Material box — calculate height with 3 lines per entry
-    const matEntries = Object.entries(byMaterial);
-    const matBoxH = 6 + matEntries.length * 18 + 4;
-    const mx = ML + halfW + 4;
-    doc.setFillColor(...LGREY);
-    doc.roundedRect(mx, y, halfW, matBoxH, 2, 2, 'F');
-    doc.setDrawColor(...MGREY);
-    doc.roundedRect(mx, y, halfW, matBoxH, 2, 2, 'S');
-    doc.setTextColor(...ORANGE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('MATERIAL USED', mx + 3, y + 5);
-    doc.setTextColor(...TEXTCOL);
-    doc.setFontSize(8);
-    let my = y + 12;
-    matEntries.forEach(([label, count]) => {
-      const parts = label.split('|').map(s => s.trim());
-      const name = parts[0] || '';
-      const ai   = parts[1] || '';
-      const pcp  = parts[2] || '';
-      // Product name + count
-      doc.setFont('helvetica', 'bold');
-      doc.text(name, mx + 3, my);
-      doc.text(String(count), mx + halfW - 4, my, { align: 'right' });
-      // AI line
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.setFontSize(7);
-      doc.text(ai, mx + 3, my + 5);
-      // PCP line
-      doc.text(pcp, mx + 3, my + 10);
-      doc.setTextColor(...TEXTCOL);
-      doc.setFontSize(8);
-      my += 18;
-    });
-
-    y += Math.max(statusBoxH, matBoxH) + 8;
-
-    // ── DETAIL TABLE ──
-    doc.setFillColor(...ORANGE);
-    doc.rect(ML, y, CW, 7, 'F');
-    doc.setTextColor(...WHITE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('INSPECTION DETAIL', ML + 3, y + 5);
-    y += 10;
-
-    doc.autoTable({
-      startY: y,
-      margin: { left: ML, right: MR },
-      head: [[
-        '#', 'Serial Number', 'Location', 'Status', 'Material', 'Capture Time', 'Comments'
-      ]],
-      body: sorted.map((r, i) => [
-        i + 1,
-        r.serial,
-        r.location,
-        STATUS_LABELS[r.status] || r.status,
-        (MATERIAL_LABELS[r.material] || r.material || 'None'),
-        r.captureTime ? fmtDateTime(new Date(r.captureTime)) : '—',
-        r.comments || ''
-      ]),
-      headStyles: {
-        fillColor: DARK,
-        textColor: WHITE,
-        fontStyle: 'bold',
-        fontSize: 8,
-        cellPadding: 3
-      },
-      bodyStyles: {
-        fontSize: 7.5,
-        cellPadding: 2.5,
-        textColor: TEXTCOL
-      },
-      alternateRowStyles: { fillColor: LGREY },
-      columnStyles: {
-        0: { cellWidth: 7,  halign: 'center' },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 52 },
-        5: { cellWidth: 32 },
-        6: { cellWidth: 'auto' }
-      },
-      didDrawPage: (data) => {
-        // Footer on each page
-        doc.setFillColor(...DARK);
-        doc.rect(0, PH - 10, PW, 10, 'F');
-        doc.setTextColor(...WHITE);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.text('Windsor Pest Control, Inc.  |  Confidential Service Report', ML, PH - 3.5);
-        doc.text(`Page ${data.pageNumber}`, PW - MR, PH - 3.5, { align: 'right' });
-      }
-    });
-
-    // ── COMPLETION BLOCK on last page ──
-    let finalY = doc.lastAutoTable.finalY + 10;
-    if (finalY > PH - 40) { doc.addPage(); finalY = 20; }
-
-    doc.setDrawColor(...MGREY);
-    doc.setFillColor(...LGREY);
-    doc.roundedRect(ML, finalY, CW, 20, 2, 2, 'F');
-    doc.roundedRect(ML, finalY, CW, 20, 2, 2, 'S');
-
-    doc.setTextColor(...DARK);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('TECHNICIAN', col1, finalY + 7);
-    doc.text('DATE COMPLETED', col2, finalY + 7);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...TEXTCOL);
-    doc.text('Catherine Trudell', col1, finalY + 16);
-    doc.text(new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), col2, finalY + 16);
-
-    // Save or return base64
-    const locationSlug = location ? '_' + location.name.replace(/\s+/g, '_').toLowerCase() : '';
-    const filename = 'windsor_service_report' + locationSlug + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
-
-    if (returnBase64) {
-      const pdfBytes = doc.output('arraybuffer');
-      const uint8 = new Uint8Array(pdfBytes);
-      let binary = '';
-      uint8.forEach(b => binary += String.fromCharCode(b));
-      const base64 = btoa(binary);
-      return { base64, filename };
-    }
-    doc.save(filename);
-    showToast('✓ PDF report downloaded');
+  if(returnBase64){
+    const pdfBytes=doc.output('arraybuffer');
+    const uint8=new Uint8Array(pdfBytes);
+    let binary=''; uint8.forEach(b=>binary+=String.fromCharCode(b));
+    return {base64:btoa(binary),filename};
   }
+  doc.save(filename);
+  showToast('✓ PDF downloaded');
+}
 
-  // ── Email PDF via Google Apps Script ───────────────────────────────────────
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZraLmP1g_14W-KfheirRik2x0nbL1-W7dzCY3dISkQX2unvdEUbxoimOTnCf8ORj5/exec';
+async function emailPDF(location) {
+  const list=loadReports();
+  if(!list.length){alert('No reports to email.');return;}
+  const to='dan.trudell75@gmail.com, catherine.wpc@gmail.com';
+  const locName=location?' — '+location.name:'';
+  const subject='Windsor Pest Control Service Report'+locName+' — '+new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+  showToast('⏳ Generating & sending PDF...');
+  try {
+    const {base64,filename}=exportPDF(location,true);
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({recipient:to,subject,body:'Please find the service report attached.\n\nReports: '+list.length,pdf:base64,pdfFilename:filename})});
+    showToast('✓ PDF emailed to both recipients');
+  } catch(e){ showToast('✕ Email failed: '+e.message,'error'); }
+}
 
-  async function emailPDF(location) {
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to export.'); return; }
+// ══════════════════════════════════════════════════════════════
+// EMAIL MODAL (CSV in body)
+// ══════════════════════════════════════════════════════════════
+function openEmailModal() {
+  const list=loadReports();
+  if(!list.length){alert('No reports to export.');return;}
+  document.getElementById('email-subject').value='Service Reports — '+new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('email-modal').classList.add('open');
+}
 
-    const to      = 'dan.trudell75@gmail.com, catherine.wpc@gmail.com';
-    const locName = location ? ' — ' + location.name : '';
-    const subject = 'Windsor Pest Control Service Report' + locName + ' — ' +
-      new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+function doEmailExport() {
+  const to=document.getElementById('email-to').value.trim();
+  const subject=document.getElementById('email-subject').value.trim();
+  if(!to){alert('Please enter a recipient email address.');return;}
+  const list=loadReports();
+  if(!list.length){alert('No reports to export.');return;}
+  const body='Service Reports Export\nExported: '+fmtDateTime(new Date())+'\nTotal Reports: '+list.length+'\n\n--- CSV DATA ---\n\n'+buildCSV();
+  window.location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  closeModal('email-modal');
+  showToast('✓ Mail app opened');
+}
 
-    showToast('⏳ Generating & sending PDF...');
+// ══════════════════════════════════════════════════════════════
+// SUBMIT TO CENTRAL LOG (GAS + SQL via API)
+// ══════════════════════════════════════════════════════════════
+function openSubmitModal() {
+  const list=loadReports();
+  if(!list.length){alert('No reports to submit.');return;}
+  document.getElementById('submit-modal-note').textContent='All '+list.length+' reports will be submitted.';
+  document.getElementById('submit-modal').classList.add('open');
+}
 
+async function doSubmit() {
+  const list=loadReports();
+  const location=document.getElementById('submit-location').value;
+  const btn=document.getElementById('btn-submit');
+  const technician=list[0]?.technician||'Unknown';
+  btn.textContent='⏳ Submitting...'; btn.disabled=true;
+
+  let apiSuccess=false;
+  // Try SQL API first
+  if (isOnline) {
     try {
-      const { base64, filename } = exportPDF(location, true);
-
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipient: to,
-          subject,
-          body: 'Please find the service report PDF attached.\n\nTechnician: Catherine Trudell\nExported: ' + fmtDateTime(new Date()) + '\nReports: ' + list.length,
-          pdf: base64,
-          pdfFilename: filename
-        })
-      });
-
-      showToast('✓ PDF emailed to both recipients');
-    } catch (err) {
-      showToast('✕ Email failed: ' + err.message);
-    }
+      await apiCall('POST', '/api/reports', { reports: list, technician, serviceLocation: location });
+      apiSuccess=true;
+    } catch(e){ console.warn('API submit failed, falling back to GAS:', e.message); }
   }
 
-  // ── Email modal ────────────────────────────────────────────────────────────
-  function openEmailModal() {
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to export.'); return; }
-    // Pre-fill subject with today's date
-    document.getElementById('email-subject').value =
-      'Service Reports — ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-    document.getElementById('email-modal').classList.add('open');
-    document.getElementById('email-to').focus();
-  }
-
-  function closeEmailModal() {
-    document.getElementById('email-modal').classList.remove('open');
-  }
-
-  async function doEmailExport() {
-    const to      = document.getElementById('email-to').value.trim();
-    const subject = document.getElementById('email-subject').value.trim();
-
-    if (!to) { alert('Please enter a recipient email address.'); return; }
-
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to send.'); return; }
-
-    // Build CSV text and put it directly in the email body
-    const csv = buildCSV();
-    const body = 'Service Reports Export\n' +
-      'Exported: ' + fmtDateTime(new Date()) + '\n' +
-      'Total Reports: ' + list.length + '\n\n' +
-      '--- CSV DATA ---\n\n' + csv;
-
-    const mailtoLink = 'mailto:' + encodeURIComponent(to) +
-      '?subject=' + encodeURIComponent(subject) +
-      '&body=' + encodeURIComponent(body);
-
-    window.location.href = mailtoLink;
-    closeEmailModal();
-    showToast('✓ Mail app opened with CSV data');
-  }
-
-  // ── Submit to Central Log ──────────────────────────────────────────────────
-  function openSubmitModal() {
-    const list = loadReports();
-    if (list.length === 0) { alert('No reports to submit.'); return; }
-    document.getElementById('submit-count').textContent = list.length;
-    document.getElementById('submit-modal-note').innerHTML =
-      'All <span id="submit-count">' + list.length + '</span> reports in the current batch will be submitted to the central Google Sheet.';
-    document.getElementById('submit-modal').classList.add('open');
-  }
-
-  function closeSubmitModal() {
-    document.getElementById('submit-modal').classList.remove('open');
-  }
-
-  async function doSubmit() {
-    const list     = loadReports();
-    const location = document.getElementById('submit-location').value;
-    const btn      = document.getElementById('btn-submit');
-
-    // Infer technician from first record
-    const technician = list[0]?.technician || 'Unknown';
-
-    btn.textContent  = '⏳ Submitting...';
-    btn.disabled     = true;
-    document.getElementById('submit-modal-note').textContent = 'Submitting — please wait...';
-
+  // Also submit to GAS/Sheet as backup
+  if (!apiSuccess) {
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:          'submit',
-          reports:         list,
-          technician,
-          serviceLocation: location
-        })
-      });
-
-      closeSubmitModal();
-      showToast('☁ ' + list.length + ' reports submitted to central log');
-    } catch(err) {
-      document.getElementById('submit-modal-note').textContent = '✕ Submit failed: ' + err.message;
-    } finally {
-      btn.textContent = '☁ Submit';
-      btn.disabled    = false;
-    }
+      await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'submit',reports:list,technician,serviceLocation:location})});
+    } catch(e){ console.warn('GAS submit failed:', e.message); }
   }
 
-  // ── Combined Report ────────────────────────────────────────────────────────
-  function openCombinedDateModal() {
-    // Pre-fill today's date
-    document.getElementById('combined-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('combined-modal').classList.add('open');
-  }
+  closeModal('submit-modal');
+  showToast(apiSuccess?'✓ Submitted to SQL database':'⚠ Submitted via backup — sync later','warn');
+  btn.textContent='☁ Submit'; btn.disabled=false;
+}
 
-  async function requestCombinedReport(dateStr) {
-    // Close date modal if open
-    document.getElementById('combined-modal').classList.remove('open');
+// ══════════════════════════════════════════════════════════════
+// COMBINED REPORT
+// ══════════════════════════════════════════════════════════════
+function openCombinedDateModal() {
+  document.getElementById('combined-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('combined-modal').classList.add('open');
+}
 
-    const date = dateStr || new Date().toISOString().slice(0, 10);
-    showToast('⏳ Requesting combined report...');
+async function requestCombinedReport(dateStr) {
+  closeModal('combined-modal');
+  const date=dateStr||new Date().toISOString().slice(0,10);
+  showToast('⏳ Requesting combined report...');
+  try {
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'combined_report',date,recipient:'dan.trudell75@gmail.com, catherine.wpc@gmail.com'})});
+    showToast('📊 Combined report emailed for '+date);
+  } catch(e){ showToast('✕ Request failed','error'); }
+}
 
-    try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:    'combined_report',
-          date,
-          recipient: 'dan.trudell75@gmail.com, catherine.wpc@gmail.com'
-        })
-      });
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function fmtDateTime(d) {
+  if(!d)return'—';
+  return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})
+    +'  '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function updateBadge(count){document.getElementById('header-badge').textContent='BATCH: '+count;}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-      showToast('📊 Combined report emailed for ' + date);
-    } catch(err) {
-      showToast('✕ Request failed: ' + err.message);
-    }
-  }
+let toastTimer=null;
+function showToast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=type==='error'?'show error':type==='warn'?'show warn':'show';
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  function updateBadge(count) {
-    document.getElementById('header-badge').textContent = 'BATCH: ' + count;
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
-
-  function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── Init ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+(function init(){
+  checkAuth();
+  updateOnlineDot();
   updateBadge(loadReports().length);
+  refreshFacilityDropdown();
   restoreSelections();
-  document.getElementById('serial').focus();
+  updateLastSyncDisplay();
+  if(isOnline && isTokenValid()) syncAll(false);
+})();
 </script>
 </body>
 </html>
